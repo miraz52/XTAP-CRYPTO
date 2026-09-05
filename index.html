@@ -2,18 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>XTAP ECOSYSTEM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>XTAP NETWORK | Official ATF Ecosystem</title>
+  
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Official TON Connect UI SDK -->
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+
   <style>
     :root {
-      --primary: #38bdf8;
-      --accent: #6366f1;
-      --bg-dark: #09090b;
-      --card-bg: rgba(255, 255, 255, 0.05);
+      --primary: #f59e0b;
+      --primary-bright: #fbbf24;
+      --green: #10b981;
+      --bg-dark: #070709;
+      --card-bg: #121217;
+      --card-border: rgba(255, 255, 255, 0.08);
     }
     * {
       box-sizing: border-box;
@@ -22,254 +28,483 @@
       user-select: none;
       -webkit-user-select: none;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      touch-action: manipulation;
     }
     body {
-      background: radial-gradient(circle at top, #1e1b4b, var(--bg-dark));
+      background: radial-gradient(circle at 50% 10%, #2e1d03 0%, #070709 85%);
       color: #ffffff;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: space-between;
-      padding: 16px;
       overflow-x: hidden;
+      padding-bottom: 75px;
     }
+
+    /* Top Status Bar */
     .top-bar {
-      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 12px;
-      background: var(--card-bg);
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 13px;
+      padding: 12px 16px;
+      z-index: 10;
     }
-    .user-tag {
-      font-weight: 600;
-      color: var(--primary);
-    }
-    .balance-box {
-      text-align: center;
-      margin: 20px 0;
-    }
-    .balance-num {
-      font-size: 44px;
-      font-weight: 900;
-      letter-spacing: -1px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .currency-tag {
-      font-size: 20px;
-      color: var(--primary);
-    }
-    .view-section {
-      width: 100%;
-      flex-grow: 1;
+    .level-badge-box {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      gap: 3px;
     }
-    .tap-btn-wrapper {
-      position: relative;
-      width: 240px;
-      height: 240px;
+    .level-pill {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 6px;
+      width: fit-content;
     }
-    .tap-btn {
-      width: 210px;
-      height: 210px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--primary), var(--accent), #1e1b4b);
-      border: 6px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 0 45px rgba(56, 189, 248, 0.4);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.08s ease;
-      -webkit-tap-highlight-color: transparent;
+    .level-sub {
+      font-size: 10px;
+      color: var(--green);
+      font-weight: 600;
     }
-    .tap-btn:active {
-      transform: scale(0.94);
-    }
-    .tap-symbol {
-      font-size: 68px;
-      font-weight: 900;
-      color: #ffffff;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
-    .floating-text {
-      position: absolute;
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--primary);
-      pointer-events: none;
-      animation: floatUp 0.6s ease-out forwards;
-    }
-    @keyframes floatUp {
-      0% { opacity: 1; transform: translateY(0); }
-      100% { opacity: 0; transform: translateY(-60px); }
-    }
-    .energy-container {
-      width: 100%;
-      max-width: 340px;
-      margin-bottom: 15px;
-    }
-    .energy-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
+    .wallet-pill {
+      background: #18181f;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 700;
       color: #94a3b8;
-      margin-bottom: 6px;
-    }
-    .bar-bg {
-      width: 100%;
-      height: 10px;
-      background: #1e293b;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .bar-fill {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--accent));
-      transition: width 0.2s ease;
-    }
-    .nav-tabs {
-      width: 100%;
-      max-width: 360px;
       display: flex;
-      background: rgba(15, 23, 42, 0.85);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 6px;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    /* Views */
+    .view-content {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 16px;
+      flex-grow: 1;
+    }
+    .view-content.active {
+      display: flex;
+    }
+
+    /* MINE TAB */
+    .assets-header {
+      text-align: center;
+      margin-top: 5px;
+    }
+    .assets-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #71717a;
+      font-weight: 800;
+    }
+    .assets-main {
+      font-size: 28px;
+      font-weight: 900;
+      margin: 4px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       gap: 6px;
     }
-    .tab-btn {
-      flex: 1;
-      padding: 10px 0;
-      background: transparent;
+    .wallet-pills-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .sub-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #a1a1aa;
+    }
+    .live-increment {
+      font-size: 32px;
+      font-weight: 900;
+      color: #10b981;
+      margin: 16px 0 6px;
+      text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+    }
+    .timer-badge {
+      font-size: 12px;
+      color: #fbbf24;
+      font-weight: 700;
+      background: rgba(245, 158, 11, 0.1);
+      padding: 4px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      margin-bottom: 6px;
+    }
+    .podium-container {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 5px 0;
+    }
+    .coin-img {
+      width: 215px;
+      height: 215px;
+      border-radius: 50%;
+      box-shadow: 0 0 50px rgba(245, 158, 11, 0.4);
+      z-index: 2;
+      object-fit: contain;
+    }
+    .podium-glow {
+      position: absolute;
+      bottom: -15px;
+      width: 200px;
+      height: 35px;
+      background: radial-gradient(ellipse, #f59e0b 0%, transparent 70%);
+      opacity: 0.6;
+      filter: blur(8px);
+    }
+    .claim-btn {
+      width: 100%;
+      max-width: 360px;
+      background: linear-gradient(90deg, #f59e0b, #eab308);
+      color: #000;
       border: none;
-      color: #94a3b8;
-      font-size: 13px;
-      font-weight: 600;
-      border-radius: 10px;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 1px;
       cursor: pointer;
+      box-shadow: 0 4px 25px rgba(245, 158, 11, 0.4);
+      margin-top: 15px;
+      transition: transform 0.1s;
+    }
+    .claim-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* CARD LIST */
+    .page-title {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 4px;
       text-align: center;
     }
-    .tab-btn.active {
-      background: var(--card-bg);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+    .page-subtitle {
+      font-size: 12px;
+      color: #71717a;
+      margin-bottom: 20px;
+      text-align: center;
     }
-    .panel {
-      display: none;
+    .list-wrapper {
       width: 100%;
-      max-width: 340px;
-      margin-top: 15px;
+      max-width: 380px;
+      display: flex;
       flex-direction: column;
       gap: 10px;
     }
-    .panel.active {
-      display: flex;
-    }
-    .task-item {
+    .card-item {
       background: var(--card-bg);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 12px;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 14px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .action-btn {
-      background: var(--accent);
-      color: #ffffff;
+    .card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .card-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .card-meta h4 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .card-meta p {
+      font-size: 11px;
+      color: #71717a;
+    }
+    .yellow-action-btn {
+      background: var(--primary-bright);
+      color: #000;
       border: none;
-      padding: 6px 14px;
-      border-radius: 8px;
+      padding: 8px 18px;
+      border-radius: 20px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
+    }
+    .yellow-action-btn:disabled {
+      background: rgba(255, 255, 255, 0.1);
+      color: #71717a;
+      cursor: not-allowed;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #09090d;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 10px 14px;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #71717a;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      flex: 1;
+    }
+    .nav-item.active {
+      color: #fbbf24;
+    }
+    .center-miner-btn {
+      width: 46px;
+      height: 46px;
+      background: radial-gradient(circle, #22c55e, #15803d);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+      margin-top: -16px;
+      color: #fff;
+      font-size: 20px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Info Bar -->
+  <!-- Top Status Bar -->
   <div class="top-bar">
-    <span class="user-tag" id="displayName">Connecting...</span>
-    <span style="color: #10b981; font-weight: 600;">● Online</span>
-  </div>
-
-  <!-- Balance Header -->
-  <div class="balance-box">
-    <div class="balance-num">
-      <span id="scoreText">0</span>
-      <span class="currency-tag">$XTAP</span>
+    <div class="level-badge-box">
+      <div class="level-pill">
+        <span>Lvl 1</span>
+        <span style="color: #10b981;">● READY</span>
+      </div>
+      <span class="level-sub" id="farmingStatusText">Auto-Farming Active</span>
+    </div>
+    <div class="wallet-pill" id="tonWalletBtn">
+      <span id="walletShort">Connect Wallet</span>
+      <span style="font-size: 10px;">▼</span>
     </div>
   </div>
 
-  <!-- TAP ENGINE -->
-  <div id="tapPanel" class="view-section">
-    <div class="tap-btn-wrapper">
-      <div class="tap-btn" id="tapButton">
-        <span class="tap-symbol">X</span>
+  <!-- TAB 1: MINE VIEW -->
+  <div id="view-mine" class="view-content active">
+    <div class="assets-header">
+      <div class="assets-title">ASSETS</div>
+      <div class="assets-main">
+        <span id="totalAssets">0.0000</span>
+        <span style="color: var(--primary);">XTAP</span>
+      </div>
+      <div class="wallet-pills-row">
+        <span class="sub-pill">HOLDING: 0 XTAP</span>
+        <span class="sub-pill" style="border: 1px solid rgba(16,185,129,0.3);">POOL: <span id="poolText" style="color:#10b981;">0.0000</span> XTAP</span>
+      </div>
+    </div>
+
+    <!-- Live Mining Rate Counter -->
+    <div class="live-increment" id="liveMiningCounter">+0.0000</div>
+    <div class="timer-badge" id="miningTimer">Cycle: 03:00:00</div>
+
+    <div class="podium-container">
+      <img src="coin.png" class="coin-img" id="coinInteractive" alt="XTAP Token" />
+      <div class="podium-glow"></div>
+    </div>
+
+    <button class="claim-btn" id="claimBtn" onclick="handleClaimOrStart()">START FARMING</button>
+  </div>
+
+  <!-- TAB 2: TASKS VIEW -->
+  <div id="view-tasks" class="view-content">
+    <h2 class="page-title">Earn Rewards</h2>
+    <p class="page-subtitle">Rewards go directly to Pool Wallet</p>
+    <div class="list-wrapper" id="tasksContainer"></div>
+  </div>
+
+  <!-- TAB 3: MINERS VIEW -->
+  <div id="view-miners" class="view-content">
+    <h2 class="page-title">Hardware Miners</h2>
+    <p class="page-subtitle">Upgrade rigs to boost base ATF farming rate</p>
+    <div class="list-wrapper">
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">⚡</div>
+          <div class="card-meta">
+            <h4>Node Booster v1</h4>
+            <p>+0.05 XTAP / hour</p>
+          </div>
+        </div>
+        <button class="yellow-action-btn">50 XTAP</button>
+      </div>
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">🚀</div>
+          <div class="card-meta">
+            <h4>Quantum Rig Pro</h4>
+            <p>+0.25 XTAP / hour</p>
+          </div>
+        </div>
+        <button class="yellow-action-btn">250 XTAP</button>
       </div>
     </div>
   </div>
 
-  <!-- TASKS PANEL -->
-  <div id="taskPanel" class="panel">
-    <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Available Micro-Tasks</div>
-    <div id="taskList" style="display: flex; flex-direction: column; gap: 8px;"></div>
-  </div>
-
-  <!-- REFERRAL PANEL -->
-  <div id="refPanel" class="panel" style="text-align: center;">
-    <div style="background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-      <h3 style="margin-bottom: 8px;">Invite Friends</h3>
-      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">Earn 10% commission on all your friend's tap points.</p>
-      <button class="action-btn" id="shareRefBtn" style="width: 100%; padding: 10px;">Copy Invite Link</button>
+  <!-- TAB 4: FRIENDS VIEW -->
+  <div id="view-friends" class="view-content">
+    <h2 class="page-title">Friends</h2>
+    <p class="page-subtitle">Invite friends to boost mining speed!</p>
+    <div class="list-wrapper">
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">🔗</div>
+          <div class="card-meta">
+            <h4>Your Invite Link</h4>
+            <p id="refLinkDisplay">Loading link...</p>
+          </div>
+        </div>
+        <button class="yellow-action-btn" onclick="copyRefLink()">Copy</button>
+      </div>
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">👥</div>
+          <div class="card-meta">
+            <h4>Your Referrals</h4>
+            <p>0 successful · 0 total</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">🎁</div>
+          <div class="card-meta">
+            <h4>Referral Reward</h4>
+            <p>0 available · +100 XTAP each</p>
+          </div>
+        </div>
+        <button class="yellow-action-btn" disabled style="background: rgba(255, 255, 255, 0.1); color: #71717a;">Claim</button>
+      </div>
     </div>
   </div>
 
-  <!-- Energy Bar -->
-  <div class="energy-container">
-    <div class="energy-meta">
-      <span>⚡ Energy</span>
-      <span><strong id="energyText">1000</strong> / 1000</span>
-    </div>
-    <div class="bar-bg">
-      <div class="bar-fill" id="energyFill"></div>
+  <!-- TAB 5: PROFILE VIEW -->
+  <div id="view-profile" class="view-content">
+    <h2 class="page-title">Profile</h2>
+    <div class="list-wrapper" style="margin-top: 15px;">
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">👤</div>
+          <div class="card-meta">
+            <h4>User ID</h4>
+            <p id="profileUserId">Loading...</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">✅</div>
+          <div class="card-meta">
+            <h4>Account Verification</h4>
+            <p>Verified Telegram User</p>
+          </div>
+        </div>
+        <button class="yellow-action-btn" style="background:#10b981; color:#fff;">Active</button>
+      </div>
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">💰</div>
+          <div class="card-meta">
+            <h4>Total Assets</h4>
+            <p id="profileAssetAmt">0.0000 XTAP</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">🏦</div>
+          <div class="card-meta">
+            <h4>Pool Wallet</h4>
+            <p style="color:#10b981;"><span id="profilePoolAmt">0.0000</span> XTAP</p>
+          </div>
+        </div>
+      </div>
+      
+      <div style="margin-top: 10px; text-align: center; color: #71717a; font-size: 12px; font-weight: 700;">Controls</div>
+      <div class="card-item">
+        <div class="card-left">
+          <div class="card-icon">↗️</div>
+          <div class="card-meta">
+            <h4>Withdraw</h4>
+            <p>Transfer Pool to TON Wallet</p>
+          </div>
+        </div>
+        <button class="yellow-action-btn" onclick="handleWithdraw()">Withdraw</button>
+      </div>
     </div>
   </div>
 
-  <!-- Bottom Navigation -->
-  <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('tap')">Tap</button>
-    <button class="tab-btn" onclick="switchTab('task')">Tasks</button>
-    <button class="tab-btn" onclick="switchTab('ref')">Friends</button>
+  <!-- 5-Tab Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchNav('mine', this)">
+      <span style="font-size: 18px;">⚒️</span>
+      <span>Mine</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('tasks', this)">
+      <span style="font-size: 18px;">📝</span>
+      <span>Tasks</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('miners', this)">
+      <div class="center-miner-btn">⚡</div>
+      <span>Miners</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('friends', this)">
+      <span style="font-size: 18px;">👥</span>
+      <span>Friends</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('profile', this)">
+      <span style="font-size: 18px;">👤</span>
+      <span>Profile</span>
+    </div>
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // SUPABASE CONFIGURATION (OFFICIAL PROJECT INTEGRATION)
-    // -------------------------------------------------------------
     const SUPABASE_URL = "https://grqnxhwzqfrxfnujaicn.supabase.co";
     const SUPABASE_KEY = "sb_publishable_FXFjr-BDyvkWkHAn0ykoiQ_X96I3Pq0";
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // -------------------------------------------------------------
-    // TELEGRAM USER IDENTIFICATION
-    // -------------------------------------------------------------
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
@@ -277,148 +512,201 @@
     }
 
     const user = tg?.initDataUnsafe?.user || {
-      id: 99999999,
-      username: "demo_pilot",
-      first_name: "Pilot"
+      id: 5330021607,
+      first_name: "Pilot",
+      username: "xtap_user"
     };
 
-    document.getElementById('displayName').innerText = `@${user.username || user.first_name}`;
+    document.getElementById('profileUserId').innerText = user.id;
+    document.getElementById('refLinkDisplay').innerText = `https://t.me/XTAPCRYPTOBOT?start=${user.id}`;
 
-    let balance = 0;
-    let energy = 1000;
-    const maxEnergy = 1000;
-    let saveTimeout = null;
+    let poolBalance = 0;
+    let isMining = false;
+    let lastClaimTime = Date.now();
+    const cycleDurationMs = 3 * 60 * 60 * 1000; // 3 Hours Cycle
+    const cycleMaxReward = 1.08; // Pro value
+    let uncollectedMining = 0;
 
-    async function initUser() {
+    // Initialize Database
+    async function initPlatform() {
       try {
-        let { data, error } = await client
-          .from('users')
-          .select('*')
-          .eq('telegram_id', user.id)
-          .single();
-
+        let { data } = await client.from('users').select('*').eq('telegram_id', user.id).single();
         if (!data) {
-          const { data: newUser } = await client
-            .from('users')
-            .insert([{
-              telegram_id: user.id,
-              username: user.username,
-              first_name: user.first_name,
-              balance: 0,
-              energy: 1000
-            }])
-            .select()
-            .single();
-          data = newUser;
+          const { data: created } = await client.from('users').insert([{
+            telegram_id: user.id,
+            username: user.username,
+            first_name: user.first_name,
+            pool_balance: 0,
+            holding_balance: 0,
+            is_mining: true,
+            last_claim_time: new Date()
+          }]).select().single();
+          data = created;
         }
 
         if (data) {
-          balance = data.balance || 0;
-          energy = data.energy || 1000;
-          updateUI();
+          poolBalance = parseFloat(data.pool_balance) || 0;
+          isMining = data.is_mining ?? true;
+          if (data.last_claim_time) {
+            lastClaimTime = new Date(data.last_claim_time).getTime();
+          }
+          if (data.wallet_address) {
+            const w = data.wallet_address;
+            document.getElementById('walletShort').innerText = `${w.substring(0, 4)}...${w.substring(w.length - 4)}`;
+          }
+          updateBalancesUI();
         }
       } catch (err) {
-        console.error("DB Sync Error:", err);
+        console.error("DB Error:", err);
       }
     }
 
-    function updateUI() {
-      document.getElementById('scoreText').innerText = balance.toLocaleString();
-      document.getElementById('energyText').innerText = energy;
-      document.getElementById('energyFill').style.width = (energy / maxEnergy * 100) + '%';
+    function updateBalancesUI() {
+      const formatted = poolBalance.toFixed(4);
+      document.getElementById('totalAssets').innerText = formatted;
+      document.getElementById('poolText').innerText = formatted;
+      document.getElementById('profileAssetAmt').innerText = `${formatted} XTAP`;
+      document.getElementById('profilePoolAmt').innerText = formatted;
     }
 
-    const tapButton = document.getElementById('tapButton');
-    tapButton.addEventListener('pointerdown', (e) => {
-      if (energy <= 0) return;
+    // Auto-Farming Engine
+    setInterval(() => {
+      if (!isMining) return;
 
-      balance += 1;
-      energy -= 1;
-      updateUI();
+      const elapsed = Date.now() - lastClaimTime;
+      const progress = Math.min(elapsed / cycleDurationMs, 1);
+      uncollectedMining = progress * cycleMaxReward;
 
-      const text = document.createElement('div');
-      text.className = 'floating-text';
-      text.innerText = '+1';
-      text.style.left = `${e.clientX - 10}px`;
-      text.style.top = `${e.clientY - 25}px`;
-      document.body.appendChild(text);
-      setTimeout(() => text.remove(), 600);
+      document.getElementById('liveMiningCounter').innerText = `+${uncollectedMining.toFixed(4)}`;
 
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(syncToDB, 1500);
-    });
+      const remainingMs = Math.max(cycleDurationMs - elapsed, 0);
+      const hrs = String(Math.floor(remainingMs / 3600000)).padStart(2, '0');
+      const mins = String(Math.floor((remainingMs % 3600000) / 60000)).padStart(2, '0');
+      const secs = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, '0');
 
-    async function syncToDB() {
-      await client.from('users').update({
-        balance: balance,
-        energy: energy,
-        last_active: new Date()
+      const claimBtn = document.getElementById('claimBtn');
+      if (progress >= 1) {
+        document.getElementById('miningTimer').innerText = "Storage Full! Claim Now";
+        claimBtn.innerText = "CLAIM XTAP";
+        claimBtn.style.background = "linear-gradient(90deg, #f59e0b, #eab308)";
+      } else {
+        document.getElementById('miningTimer').innerText = `Farming: ${hrs}:${mins}:${secs}`;
+        claimBtn.innerText = `CLAIM (+${uncollectedMining.toFixed(4)})`;
+        claimBtn.style.background = "linear-gradient(90deg, #f59e0b, #eab308)";
+      }
+    }, 1000);
+
+    async function handleClaimOrStart() {
+      if (!isMining) {
+        isMining = true;
+        lastClaimTime = Date.now();
+        await client.from('users').update({ is_mining: true, last_claim_time: new Date() }).eq('telegram_id', user.id);
+        return;
+      }
+
+      if (uncollectedMining <= 0.0001) {
+        alert("Wait a few moments for tokens to be farmed!");
+        return;
+      }
+
+      poolBalance += uncollectedMining;
+      uncollectedMining = 0;
+      lastClaimTime = Date.now();
+      updateBalancesUI();
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      alert("Tokens claimed into your Pool Wallet!");
+
+      await client.from('users').update({ 
+        pool_balance: poolBalance,
+        last_claim_time: new Date()
       }).eq('telegram_id', user.id);
     }
 
-    setInterval(() => {
-      if (energy < maxEnergy) {
-        energy += 1;
-        updateUI();
-      }
-    }, 2000);
-
-    function switchTab(type) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('tapPanel').style.display = 'none';
-      document.getElementById('taskPanel').classList.remove('active');
-      document.getElementById('refPanel').classList.remove('active');
-
-      if (type === 'tap') {
-        document.getElementById('tapPanel').style.display = 'flex';
-        event.target.classList.add('active');
-      } else if (type === 'task') {
-        document.getElementById('taskPanel').classList.add('active');
-        event.target.classList.add('active');
-        loadTasks();
-      } else if (type === 'ref') {
-        document.getElementById('refPanel').classList.add('active');
-        event.target.classList.add('active');
-      }
+    function switchNav(tabName, el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById(`view-${tabName}`).classList.add('active');
+      if (tabName === 'tasks') renderTasks();
     }
 
-    async function loadTasks() {
-      const { data: tasks } = await client.from('tasks').select('*');
-      const listEl = document.getElementById('taskList');
-      listEl.innerHTML = '';
+    // Official Premium Tasks
+    const officialTasks = [
+      { id: 1, title: 'Subscribe YouTube Channel', reward: 3, url: 'https://youtube.com/@humancuriously-x1f' },
+      { id: 2, title: 'Join Official Telegram Channel', reward: 3, url: 'https://t.me/Cryptotapxofficial' },
+      { id: 3, title: 'Join Telegram Community Group', reward: 3, url: 'https://t.me/xtapsuppurt' },
+      { id: 4, title: 'Follow Official X (Twitter)', reward: 3, url: 'https://x.com/xtapcrypto' }
+    ];
 
-      if (tasks) {
-        tasks.forEach(task => {
-          const item = document.createElement('div');
-          item.className = 'task-item';
-          item.innerHTML = `
-            <div>
-              <div style="font-weight: 600; font-size: 14px;">${task.title}</div>
-              <div style="font-size: 12px; color: #38bdf8;">+${task.reward.toLocaleString()} $XTAP</div>
+    async function renderTasks() {
+      const container = document.getElementById('tasksContainer');
+      container.innerHTML = '<div style="text-align:center; color:#71717a;">Checking tasks...</div>';
+
+      const { data: completed } = await client.from('user_tasks').select('task_id').eq('telegram_id', user.id);
+      const completedMap = (completed || []).map(c => c.task_id);
+
+      container.innerHTML = '';
+      officialTasks.forEach(t => {
+        const isDone = completedMap.includes(t.id);
+        const item = document.createElement('div');
+        item.className = 'card-item';
+        item.innerHTML = `
+          <div class="card-left">
+            <div class="card-icon">💬</div>
+            <div class="card-meta">
+              <h4>${t.title}</h4>
+              <p style="color:#10b981; font-weight:700;">+${t.reward} XTAP</p>
             </div>
-            <button class="action-btn" onclick="completeTask(${task.id}, ${task.reward}, '${task.task_url}')">Start</button>
-          `;
-          listEl.appendChild(item);
-        });
-      }
+          </div>
+          <button class="yellow-action-btn" id="btn-task-${t.id}" ${isDone ? 'disabled' : ''} onclick="executeTask(${t.id}, '${t.url}', ${t.reward})">
+            ${isDone ? 'Completed ✓' : 'Go'}
+          </button>
+        `;
+        container.appendChild(item);
+      });
     }
 
-    async function completeTask(taskId, reward, url) {
+    async function executeTask(id, url, reward) {
       window.open(url, '_blank');
-      balance += reward;
-      updateUI();
-      await syncToDB();
-      await client.from('user_tasks').insert([{ telegram_id: user.id, task_id: taskId }]);
-      alert("Task reward credited!");
+      const btn = document.getElementById(`btn-task-${id}`);
+      btn.innerText = "Checking...";
+      btn.disabled = true;
+
+      setTimeout(async () => {
+        poolBalance += reward;
+        updateBalancesUI();
+        await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
+        await client.from('user_tasks').insert([{ telegram_id: user.id, task_id: id }]);
+        btn.innerText = "Completed ✓";
+        alert(`+${reward} XTAP credited to your Pool Wallet!`);
+      }, 5000);
     }
 
-    document.getElementById('shareRefBtn').addEventListener('click', () => {
-      const refLink = `https://t.me/share/url?url=https://t.me/&text=Join%20XTAP%20Crypto%20Mining!`;
-      navigator.clipboard.writeText(refLink);
-      alert("Referral link copied!");
+    function copyRefLink() {
+      navigator.clipboard.writeText(`https://t.me/XTAPCRYPTOBOT?start=${user.id}`);
+      alert("Official invite link copied!");
+    }
+
+    function handleWithdraw() {
+      alert("Withdrawals will unlock upon official TON mainnet distribution.");
+    }
+
+    // Official TON Connect 2.0
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://xtap-crypto.vercel.app/tonconnect-manifest.json',
+      buttonRootId: 'tonWalletBtn'
     });
 
-    initUser();
+    tonConnectUI.onStatusChange(async (wallet) => {
+      if (wallet) {
+        const addr = wallet.account.address;
+        document.getElementById('walletShort').innerText = `${addr.substring(0, 4)}...${addr.substring(addr.length - 4)}`;
+        await client.from('users').update({ wallet_address: addr }).eq('telegram_id', user.id);
+      }
+    });
+
+    initPlatform();
   </script>
 </body>
 </html>
