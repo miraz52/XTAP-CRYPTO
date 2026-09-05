@@ -217,7 +217,6 @@
       pointer-events: none;
     }
 
-    /* Circular Frame with No Blue Highlight */
     .token-art-container {
       width: 215px;
       height: 215px;
@@ -240,7 +239,6 @@
       -webkit-tap-highlight-color: transparent !important;
     }
 
-    /* কয়েন ছবিকে সিল করে চারকোনা ভাব সম্পূর্ণ দূর করা */
     .token-art-image {
       width: 100%;
       height: 100%;
@@ -303,7 +301,7 @@
       50% { transform: scale(1.02); }
     }
 
-    /* Cards */
+    /* Task & Profile Cards */
     .view-header {
       text-align: center;
       margin-bottom: 20px;
@@ -837,14 +835,13 @@
     let lastBoostTime = parseInt(localStorage.getItem(`xtap_last_boost_${user.id}`)) || 0;
     let currentCaptcha = "";
 
-    // Web Audio Synth: ক্রিপ্টো কয়েন সাউন্ড সিন্থেসাইজার
+    // Web Audio Synth
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playCoinChimeSound() {
       if (audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
-      // ডাবল ক্রিপ্টো বেল সিন্থ
       playTone(987.77, 0.08, 'triangle', () => {
         playTone(1318.51, 0.35, 'sine');
       });
@@ -873,7 +870,6 @@
       } catch (e) {}
     }
 
-    // 3D Press Effect (No Blue Highlight)
     function triggerCoinTapVisual() {
       playTapHapticSound();
       const core = document.getElementById('tokenCoreStage');
@@ -1106,38 +1102,69 @@
       await client.from('users').update({ is_verified: true }).eq('telegram_id', user.id);
     }
 
-    // ফার্মিং লাইভ ইঞ্জিন
+    // প্রতি সেকেন্ডের লাইভ লুপ (ফার্মিং এবং বুস্ট কাউন্টডাউন আপডেট)
     setInterval(() => {
-      if (!lastClaimTime) return;
-      
       const now = Date.now();
-      const elapsed = now - lastClaimTime;
-      const progress = Math.min(elapsed / cycleDurationMs, 1);
-      
-      const isBoostActive = (now - lastBoostTime) < BOOST_DURATION_MS;
-      const currentCycleReward = isBoostActive ? (cycleBaseReward * 1.5) : cycleBaseReward;
-      const uncollected = progress * currentCycleReward;
 
-      document.getElementById('liveMiningCounter').innerText = `+${uncollected.toFixed(4)}${isBoostActive ? ' (1.5x)' : ''}`;
+      // ১. ফার্মিং টাইমার লজিক
+      if (lastClaimTime) {
+        const elapsed = now - lastClaimTime;
+        const progress = Math.min(elapsed / cycleDurationMs, 1);
+        
+        const isBoostActive = (now - lastBoostTime) < BOOST_DURATION_MS;
+        const currentCycleReward = isBoostActive ? (cycleBaseReward * 1.5) : cycleBaseReward;
+        const uncollected = progress * currentCycleReward;
 
-      const remainingMs = Math.max(cycleDurationMs - elapsed, 0);
-      const hrs = String(Math.floor(remainingMs / 3600000)).padStart(2, '0');
-      const mins = String(Math.floor((remainingMs % 3600000) / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, '0');
+        document.getElementById('liveMiningCounter').innerText = `+${uncollected.toFixed(4)}${isBoostActive ? ' (1.5x)' : ''}`;
 
-      const claimBtn = document.getElementById('claimBtn');
-      const timerLabel = document.getElementById('miningTimer');
+        const remainingMs = Math.max(cycleDurationMs - elapsed, 0);
+        const hrs = String(Math.floor(remainingMs / 3600000)).padStart(2, '0');
+        const mins = String(Math.floor((remainingMs % 3600000) / 60000)).padStart(2, '0');
+        const secs = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, '0');
 
-      if (progress >= 1) {
-        timerLabel.innerText = "Vault Full! Ready to Claim";
-        claimBtn.innerText = `CLAIM (${uncollected.toFixed(4)} XTAP)`;
-        claimBtn.className = "primary-cta-btn ready-claim";
-        claimBtn.disabled = false;
-      } else {
-        timerLabel.innerText = `Farming: ${hrs}:${mins}:${secs}`;
-        claimBtn.innerText = `FARMING (${hrs}:${mins}:${secs})`;
-        claimBtn.className = "primary-cta-btn in-progress";
-        claimBtn.disabled = true;
+        const claimBtn = document.getElementById('claimBtn');
+        const timerLabel = document.getElementById('miningTimer');
+
+        if (progress >= 1) {
+          timerLabel.innerText = "Vault Full! Ready to Claim";
+          claimBtn.innerText = `CLAIM (${uncollected.toFixed(4)} XTAP)`;
+          claimBtn.className = "primary-cta-btn ready-claim";
+          claimBtn.disabled = false;
+        } else {
+          timerLabel.innerText = `Farming: ${hrs}:${mins}:${secs}`;
+          claimBtn.innerText = `FARMING (${hrs}:${mins}:${secs})`;
+          claimBtn.className = "primary-cta-btn in-progress";
+          claimBtn.disabled = true;
+        }
+      }
+
+      // ২. বুস্ট বাটন লাইভ সেকেন্ড কাউন্টডাউন (যা আগে আটকে ছিল)
+      const boostBtn = document.getElementById('btn-task-99');
+      if (boostBtn) {
+        const timeSinceBoost = now - lastBoostTime;
+        if (timeSinceBoost < BOOST_DURATION_MS) {
+          // বুস্ট অ্যাক্টিভ - লাইভ কাউন্টডাউন
+          const leftMs = BOOST_DURATION_MS - timeSinceBoost;
+          const bHrs = String(Math.floor(leftMs / 3600000)).padStart(2, '0');
+          const bMins = String(Math.floor((leftMs % 3600000) / 60000)).padStart(2, '0');
+          const bSecs = String(Math.floor((leftMs % 60000) / 1000)).padStart(2, '0');
+          boostBtn.innerText = `${bHrs}:${bMins}:${bSecs}`;
+          boostBtn.disabled = true;
+          boostBtn.classList.remove('active-highlight');
+        } else if (timeSinceBoost < BOOST_COOLDOWN_MS) {
+          // কুলডাউন - লাইভ সেকেন্ড কাউন্টডাউন
+          const cdMs = BOOST_COOLDOWN_MS - timeSinceBoost;
+          const cdHrs = String(Math.floor(cdMs / 3600000)).padStart(2, '0');
+          const cdMins = String(Math.floor((cdMs % 3600000) / 60000)).padStart(2, '0');
+          const cdSecs = String(Math.floor((cdMs % 60000) / 1000)).padStart(2, '0');
+          boostBtn.innerText = `${cdHrs}:${cdMins}:${cdSecs}`;
+          boostBtn.disabled = true;
+          boostBtn.classList.remove('active-highlight');
+        } else {
+          boostBtn.innerText = "Activate";
+          boostBtn.disabled = false;
+          boostBtn.classList.add('active-highlight');
+        }
       }
     }, 1000);
 
@@ -1151,7 +1178,6 @@
         return;
       }
 
-      // সাউন্ড এবং হ্যাপটিক্স বাজানো
       playCoinChimeSound();
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
@@ -1218,18 +1244,20 @@
           }
         } else if (t.type === 'booster') {
           const timeSinceBoost = now - lastBoostTime;
-          
           if (timeSinceBoost < BOOST_DURATION_MS) {
             isDone = true;
             const leftMs = BOOST_DURATION_MS - timeSinceBoost;
-            const mins = Math.floor(leftMs / 60000);
-            btnText = `Active (${mins}m)`;
+            const bHrs = String(Math.floor(leftMs / 3600000)).padStart(2, '0');
+            const bMins = String(Math.floor((leftMs % 3600000) / 60000)).padStart(2, '0');
+            const bSecs = String(Math.floor((leftMs % 60000) / 1000)).padStart(2, '0');
+            btnText = `${bHrs}:${bMins}:${bSecs}`;
           } else if (timeSinceBoost < BOOST_COOLDOWN_MS) {
             isDone = true;
             const cdMs = BOOST_COOLDOWN_MS - timeSinceBoost;
-            const hrs = String(Math.floor(cdMs / 3600000)).padStart(2, '0');
-            const mins = String(Math.floor((cdMs % 3600000) / 60000)).padStart(2, '0');
-            btnText = `Wait ${hrs}h ${mins}m`;
+            const cdHrs = String(Math.floor(cdMs / 3600000)).padStart(2, '0');
+            const cdMins = String(Math.floor((cdMs % 3600000) / 60000)).padStart(2, '0');
+            const cdSecs = String(Math.floor((cdMs % 60000) / 1000)).padStart(2, '0');
+            btnText = `${cdHrs}:${cdMins}:${cdSecs}`;
           } else {
             btnText = "Activate";
           }
