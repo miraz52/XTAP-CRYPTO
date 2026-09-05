@@ -301,7 +301,7 @@
       50% { transform: scale(1.02); }
     }
 
-    /* Task & Profile Cards */
+    /* Cards */
     .view-header {
       text-align: center;
       margin-bottom: 20px;
@@ -1138,12 +1138,11 @@
         }
       }
 
-      // ২. বুস্ট বাটন লাইভ সেকেন্ড কাউন্টডাউন (যা আগে আটকে ছিল)
+      // ২. বুস্ট বাটন লাইভ সেকেন্ড কাউন্টডাউন
       const boostBtn = document.getElementById('btn-task-99');
       if (boostBtn) {
         const timeSinceBoost = now - lastBoostTime;
         if (timeSinceBoost < BOOST_DURATION_MS) {
-          // বুস্ট অ্যাক্টিভ - লাইভ কাউন্টডাউন
           const leftMs = BOOST_DURATION_MS - timeSinceBoost;
           const bHrs = String(Math.floor(leftMs / 3600000)).padStart(2, '0');
           const bMins = String(Math.floor((leftMs % 3600000) / 60000)).padStart(2, '0');
@@ -1152,7 +1151,6 @@
           boostBtn.disabled = true;
           boostBtn.classList.remove('active-highlight');
         } else if (timeSinceBoost < BOOST_COOLDOWN_MS) {
-          // কুলডাউন - লাইভ সেকেন্ড কাউন্টডাউন
           const cdMs = BOOST_COOLDOWN_MS - timeSinceBoost;
           const cdHrs = String(Math.floor(cdMs / 3600000)).padStart(2, '0');
           const cdMins = String(Math.floor((cdMs % 3600000) / 60000)).padStart(2, '0');
@@ -1218,10 +1216,29 @@
       const container = document.getElementById('tasksContainer');
       container.innerHTML = '<div style="text-align:center; color:#6b7280;">Querying node operations...</div>';
 
-      const { data: records } = await client.from('user_tasks').select('*').eq('telegram_id', user.id);
       const recordMap = {};
-      (records || []).forEach(r => {
-        recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
+
+      // ১. ডাটাবেজ থেকে সম্পন্ন টাস্ক নিয়ে আসা
+      try {
+        const { data: records } = await client.from('user_tasks').select('*').eq('telegram_id', user.id);
+        (records || []).forEach(r => {
+          recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
+          // লোকাল স্টোরেজেও ডাবল ব্যাকআপ লক করে দেওয়া
+          if (r.task_id !== 99) {
+            localStorage.setItem(`xtap_task_done_${user.id}_${r.task_id}`, 'true');
+          }
+        });
+      } catch (e) {
+        console.error("Task fetch error:", e);
+      }
+
+      // ২. লোকাল স্টোরেজ থেকে হার্ডওয়্যার লক চেক (জিরো এক্সপ্লয়েট)
+      officialTasks.forEach(t => {
+        if (t.type === 'social') {
+          if (localStorage.getItem(`xtap_task_done_${user.id}_${t.id}`) === 'true') {
+            recordMap[t.id] = recordMap[t.id] || Date.now();
+          }
+        }
       });
 
       if (recordMap[99] && recordMap[99] > lastBoostTime) {
@@ -1240,7 +1257,7 @@
         if (t.type === 'social') {
           if (lastDone) {
             isDone = true;
-            btnText = "Claimed ✓";
+            btnText = "Claimed ✓"; // আজীবনের জন্য ক্লেইমড
           }
         } else if (t.type === 'booster') {
           const timeSinceBoost = now - lastBoostTime;
@@ -1286,6 +1303,12 @@
     function handleTaskAction(id, url, reward, type) {
       if (type === 'booster') {
         activateDailyBooster(id);
+        return;
+      }
+
+      // কঠোর অ্যান্টি-রিপ্লে গার্ড: একবার সম্পন্ন হলে আর কোনোভাবেই ক্লিক হতে দেওয়া যাবে না
+      if (localStorage.getItem(`xtap_task_done_${user.id}_${id}`) === 'true') {
+        alert("Operation already cleared and rewarded.");
         return;
       }
 
@@ -1340,21 +1363,33 @@
     }
 
     async function completeTask(id, reward) {
+      // ডাবল চেকিং: অলরেডি ক্লেইমড হলে কোড থামিয়ে দেওয়া
+      if (localStorage.getItem(`xtap_task_done_${user.id}_${id}`) === 'true') {
+        return;
+      }
+
       const btn = document.getElementById(`btn-task-${id}`);
       btn.innerText = "Claiming...";
       btn.disabled = true;
+
+      // সাথে সাথে লোকাল লক দেওয়া যাতে এক সেকেন্ডের ভেতর মাল্টি-ক্লিক না করা যায়
+      localStorage.setItem(`xtap_task_done_${user.id}_${id}`, 'true');
 
       playCoinChimeSound();
       poolBalance += reward;
       updateBalancesUI();
 
-      await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
-      await client.from('user_tasks').upsert({ 
-        telegram_id: user.id, 
-        task_id: id,
-        completed_at: new Date().toISOString(),
-        last_completed_at: new Date().toISOString()
-      }, { onConflict: 'telegram_id,task_id' });
+      try {
+        await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
+        await client.from('user_tasks').upsert({ 
+          telegram_id: user.id, 
+          task_id: id,
+          completed_at: new Date().toISOString(),
+          last_completed_at: new Date().toISOString()
+        }, { onConflict: 'telegram_id,task_id' });
+      } catch (err) {
+        console.error("Task sync error:", err);
+      }
 
       delete taskChecks[id];
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
