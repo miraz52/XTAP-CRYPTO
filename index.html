@@ -11,7 +11,7 @@
   <style>
     :root {
       --gold: #f59e0b;
-      --gold-glow: rgba(245, 158, 11, 0.4);
+      --gold-glow: rgba(245, 158, 11, 0.45);
       --neon-cyan: #06b6d4;
       --neon-green: #10b981;
       --bg-deep: #050507;
@@ -26,6 +26,7 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none; /* প্রিভেন্ট লং-প্রেস মেনু */
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       touch-action: manipulation;
     }
@@ -113,7 +114,7 @@
       display: flex;
     }
 
-    /* MINE TAB HERO */
+    /* MINE TAB */
     .hero-balance-wrap {
       text-align: center;
       margin-top: 10px;
@@ -172,7 +173,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* 3D Dynamic Floating Stage */
+    /* 3D Dynamic Coin Stage */
     .coin-stage-wrap {
       position: relative;
       width: 260px;
@@ -188,7 +189,7 @@
       position: absolute;
       width: 220px;
       height: 220px;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(6, 182, 212, 0.15) 50%, transparent 75%);
+      background: radial-gradient(circle, var(--gold-glow) 0%, rgba(6, 182, 212, 0.15) 50%, transparent 75%);
       border-radius: 50%;
       filter: blur(30px);
       z-index: 1;
@@ -208,7 +209,7 @@
       pointer-events: none;
     }
 
-    /* 3D Floating Token with Depth & Tilt */
+    /* Seamless 3D Circle Frame */
     .token-art-container {
       width: 215px;
       height: 215px;
@@ -221,54 +222,33 @@
       justify-content: center;
       transform-style: preserve-3d;
       animation: float3D 5s ease-in-out infinite;
+      overflow: hidden; /* ব্যাকগ্রাউন্ডের বাইরের অংশ বাদ দেওয়া */
       box-shadow: 
-        0 25px 45px rgba(0, 0, 0, 0.8),
-        0 0 50px rgba(245, 158, 11, 0.35),
-        inset 0 0 20px rgba(245, 158, 11, 0.2);
+        0 25px 45px rgba(0, 0, 0, 0.85),
+        0 0 50px rgba(245, 158, 11, 0.35);
+      border: 3px solid #fbbf24;
       transition: transform 0.12s ease-out;
     }
 
-    /* Circular Bezel Rim for 3D metallic coin edge */
-    .token-art-container::before {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 50%;
-      padding: 3px;
-      background: linear-gradient(135deg, #fbbf24 0%, #78350f 50%, #f59e0b 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-      box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
-    }
-
+    /* পারফেক্ট কয়েন স্কেল - কালো ফ্রেম বাদ দিয়ে শুধু সোনালী কয়েন দেখানো */
     .token-art-image {
       width: 100%;
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
+      transform: scale(1.28); /* চারপাশের কালো বক্স কেটে গোল কয়েন পুরো ফ্রেমে ফিট করা */
       display: block;
-      filter: contrast(1.1) brightness(1.05);
+      pointer-events: none;
+      -webkit-user-drag: none;
+      filter: contrast(1.15) brightness(1.08);
     }
 
-    /* 3D Keyframe Animations */
     @keyframes float3D {
-      0% {
-        transform: translateY(0px) rotateX(0deg) rotateY(0deg);
-      }
-      25% {
-        transform: translateY(-8px) rotateX(8deg) rotateY(10deg);
-      }
-      50% {
-        transform: translateY(0px) rotateX(0deg) rotateY(-8deg);
-      }
-      75% {
-        transform: translateY(8px) rotateX(-8deg) rotateY(6deg);
-      }
-      100% {
-        transform: translateY(0px) rotateX(0deg) rotateY(0deg);
-      }
+      0% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
+      25% { transform: translateY(-8px) rotateX(8deg) rotateY(10deg); }
+      50% { transform: translateY(0px) rotateX(0deg) rotateY(-8deg); }
+      75% { transform: translateY(8px) rotateX(-8deg) rotateY(6deg); }
+      100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
     }
 
     @keyframes pulseAura {
@@ -298,7 +278,7 @@
       filter: brightness(0.95);
     }
 
-    /* Cards */
+    /* Task & Profile Cards */
     .view-header {
       text-align: center;
       margin-bottom: 22px;
@@ -400,6 +380,11 @@
       box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
     }
 
+    .btn-action-small:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     .status-tag {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -488,7 +473,7 @@
       border: none;
     }
 
-    /* Dock Nav */
+    /* Dock Navigation */
     .dock-nav {
       position: fixed;
       bottom: 0;
@@ -552,7 +537,7 @@
     }
   </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
   <!-- Top HUD Bar -->
   <div class="top-hud">
@@ -713,7 +698,7 @@
         </div>
       </div>
 
-      <!-- Professional Pre-TGE Locked Airdrop Card -->
+      <!-- Pre-TGE Locked Airdrop Card -->
       <div class="glass-card">
         <div class="card-meta-left">
           <div class="meta-icon-badge">📦</div>
@@ -815,7 +800,7 @@
     let uncollectedMining = 0;
     let currentCaptcha = "";
 
-    // 3D Tap Visual & Heavy Haptic Feedback
+    // 3D Press Effect & Haptic Feedback
     function triggerCoinTapVisual() {
       const core = document.getElementById('tokenCoreStage');
       if (core) {
@@ -1102,6 +1087,12 @@
         recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
       });
 
+      // লোকাল ব্যাকআপ বুস্ট টাইম চেক
+      const localBoostTime = parseInt(localStorage.getItem(`last_boost_${user.id}`)) || 0;
+      if (localBoostTime > (recordMap[99] || 0)) {
+        recordMap[99] = localBoostTime;
+      }
+
       container.innerHTML = '';
       const now = Date.now();
 
@@ -1155,7 +1146,7 @@
 
     function handleTaskAction(id, url, reward, type) {
       if (type === 'booster') {
-        completeTask(id, reward);
+        executeBoosterClaim(id, reward);
         return;
       }
 
@@ -1183,6 +1174,31 @@
       }
 
       completeTask(id, reward);
+    }
+
+    // বুস্টারের জন্য ডেডিকেটেড এক্সিকিউশন
+    async function executeBoosterClaim(id, reward) {
+      const btn = document.getElementById(`btn-task-${id}`);
+      btn.innerText = "Boosting...";
+      btn.disabled = true;
+
+      poolBalance += reward;
+      updateBalancesUI();
+
+      const nowIso = new Date().toISOString();
+      localStorage.setItem(`last_boost_${user.id}`, Date.now());
+
+      await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
+      await client.from('user_tasks').upsert({ 
+        telegram_id: user.id, 
+        task_id: id,
+        completed_at: nowIso,
+        last_completed_at: nowIso
+      }, { onConflict: 'telegram_id,task_id' });
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      alert(`⚡ Kinetic Boost Activated!\n+${reward} XTAP credited to your Vault.`);
+      renderTasks();
     }
 
     async function completeTask(id, reward) {
@@ -1216,3 +1232,4 @@
   </script>
 </body>
 </html>
+
