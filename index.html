@@ -26,7 +26,7 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
-      -webkit-touch-callout: none; /* প্রিভেন্ট লং-প্রেস মেনু */
+      -webkit-touch-callout: none;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       touch-action: manipulation;
     }
@@ -50,45 +50,52 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 20px;
+      padding: 14px 18px;
       z-index: 20;
     }
 
-    .node-status-pill {
+    .user-profile-hud {
       display: flex;
       align-items: center;
       gap: 8px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--card-border);
       backdrop-filter: blur(10px);
-      padding: 6px 14px;
-      border-radius: 24px;
+      padding: 5px 12px;
+      border-radius: 20px;
     }
 
-    .live-dot {
-      width: 7px;
-      height: 7px;
-      background: var(--neon-green);
+    .user-avatar-circle {
+      width: 22px;
+      height: 22px;
+      background: var(--accent-gradient);
+      color: #000;
       border-radius: 50%;
-      box-shadow: 0 0 10px var(--neon-green);
-      animation: pulseDot 2s infinite ease-in-out;
+      font-size: 11px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .node-text {
+    .user-hud-name {
       font-size: 11px;
       font-weight: 800;
-      letter-spacing: 0.8px;
-      color: #d1d5db;
+      color: #e5e7eb;
+      max-width: 110px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .wallet-chip {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
       background: rgba(245, 158, 11, 0.08);
       border: 1px solid rgba(245, 158, 11, 0.3);
-      padding: 6px 14px;
-      border-radius: 24px;
+      padding: 5px 12px;
+      border-radius: 20px;
       font-size: 11px;
       font-weight: 800;
       color: var(--gold);
@@ -166,7 +173,7 @@
     }
 
     .cooldown-timer-wrap {
-      margin-top: 10px;
+      margin-top: 8px;
       font-size: 12px;
       font-weight: 700;
       color: #9ca3af;
@@ -181,7 +188,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 20px 0 10px;
+      margin: 15px 0 10px;
       perspective: 1000px;
     }
 
@@ -209,7 +216,6 @@
       pointer-events: none;
     }
 
-    /* Seamless 3D Circle Frame */
     .token-art-container {
       width: 215px;
       height: 215px;
@@ -222,7 +228,7 @@
       justify-content: center;
       transform-style: preserve-3d;
       animation: float3D 5s ease-in-out infinite;
-      overflow: hidden; /* ব্যাকগ্রাউন্ডের বাইরের অংশ বাদ দেওয়া */
+      overflow: hidden;
       box-shadow: 
         0 25px 45px rgba(0, 0, 0, 0.85),
         0 0 50px rgba(245, 158, 11, 0.35);
@@ -230,13 +236,12 @@
       transition: transform 0.12s ease-out;
     }
 
-    /* পারফেক্ট কয়েন স্কেল - কালো ফ্রেম বাদ দিয়ে শুধু সোনালী কয়েন দেখানো */
     .token-art-image {
       width: 100%;
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      transform: scale(1.28); /* চারপাশের কালো বক্স কেটে গোল কয়েন পুরো ফ্রেমে ফিট করা */
+      transform: scale(1.28);
       display: block;
       pointer-events: none;
       -webkit-user-drag: none;
@@ -256,15 +261,16 @@
       100% { transform: scale(1.15); opacity: 0.9; }
     }
 
+    /* Farming Button States */
     .primary-cta-btn {
       width: 100%;
       max-width: 360px;
       background: var(--accent-gradient);
       color: #050507;
       border: none;
-      padding: 18px;
+      padding: 17px;
       border-radius: 18px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 900;
       letter-spacing: 1.2px;
       cursor: pointer;
@@ -273,15 +279,29 @@
       margin-top: 10px;
     }
 
-    .primary-cta-btn:active {
-      transform: scale(0.98);
-      filter: brightness(0.95);
+    .primary-cta-btn.in-progress {
+      background: rgba(255, 255, 255, 0.08);
+      color: #9ca3af;
+      box-shadow: none;
+      cursor: not-allowed;
     }
 
-    /* Task & Profile Cards */
+    .primary-cta-btn.ready-claim {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+      animation: pulseClaim 1.5s infinite;
+    }
+
+    @keyframes pulseClaim {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    /* Tasks and Cards */
     .view-header {
       text-align: center;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
 
     .view-title {
@@ -381,7 +401,9 @@
     }
 
     .btn-action-small:disabled {
-      opacity: 0.45;
+      background: rgba(255, 255, 255, 0.05);
+      color: #6b7280;
+      border-color: transparent;
       cursor: not-allowed;
     }
 
@@ -539,11 +561,11 @@
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- Top HUD Bar -->
+  <!-- Top HUD Bar: Showing Real Telegram User -->
   <div class="top-hud">
-    <div class="node-status-pill">
-      <div class="live-dot"></div>
-      <span class="node-text">XTAP NODE v2</span>
+    <div class="user-profile-hud">
+      <div class="user-avatar-circle" id="userInitial">P</div>
+      <span class="user-hud-name" id="userDisplayTop">Pilot</span>
     </div>
     <div class="wallet-chip" onclick="openBscWalletModal()">
       <span>🟡</span>
@@ -565,7 +587,7 @@
       <div class="cooldown-timer-wrap" id="miningTimer">Cycle: 03:00:00</div>
     </div>
 
-    <!-- 3D Coin Interactive Centerpiece -->
+    <!-- 3D Coin Interactive Stage -->
     <div class="coin-stage-wrap">
       <div class="stage-glow-back"></div>
       <div class="rotating-halo"></div>
@@ -660,8 +682,8 @@
         <div class="card-meta-left">
           <div class="meta-icon-badge">👤</div>
           <div class="meta-text-box">
-            <h4>Pilot ID</h4>
-            <p id="profileUserId">Loading...</p>
+            <h4 id="profileFullUserName">Pilot</h4>
+            <p id="profileUserId">ID: Loading...</p>
           </div>
         </div>
       </div>
@@ -777,30 +799,38 @@
       tg.expand();
     }
 
-    const user = tg?.initDataUnsafe?.user || {
-      id: 5330021607,
-      first_name: "Pilot",
-      username: "xtap_user"
+    const tgUser = tg?.initDataUnsafe?.user;
+    const user = {
+      id: tgUser?.id || 5330021607,
+      first_name: tgUser?.first_name || "Pilot",
+      username: tgUser?.username || ""
     };
+
+    // UI-তে ইউজারের আসল নাম ডিসপ্লে
+    const displayName = user.username ? `@${user.username}` : user.first_name;
+    document.getElementById('userDisplayTop').innerText = displayName;
+    document.getElementById('userInitial').innerText = (user.first_name || "P").charAt(0).toUpperCase();
+    document.getElementById('profileFullUserName').innerText = `${user.first_name} ${user.username ? '(@'+user.username+')' : ''}`;
+    document.getElementById('profileUserId').innerText = `ID: ${user.id}`;
 
     const urlParams = new URLSearchParams(window.location.search);
     const startParam = tg?.initDataUnsafe?.start_param || urlParams.get('tgWebAppStartParam') || urlParams.get('start');
     const referredBy = startParam && !isNaN(startParam) ? parseInt(startParam) : null;
 
     const directAppLink = `https://t.me/XTAPCRYPTOBOT?start=${user.id}`;
-    document.getElementById('profileUserId').innerText = user.id;
     document.getElementById('refLinkDisplay').innerText = directAppLink;
 
     let poolBalance = parseFloat(localStorage.getItem(`xtap_bal_${user.id}`)) || 0;
     let isHumanVerified = false;
     let bscAddress = "";
-    let lastClaimTime = Date.now();
+    
+    // ৩-ঘণ্টা ফার্মিং প্যারামিটার
     const cycleDurationMs = 3 * 60 * 60 * 1000;
-    const cycleMaxReward = 1.08;
-    let uncollectedMining = 0;
+    const cycleBaseReward = 0.54; // ৩ ঘণ্টায় বেস রিওয়ার্ড
+    let lastClaimTime = parseInt(localStorage.getItem(`xtap_last_claim_${user.id}`)) || 0;
+    let boostUntil = parseInt(localStorage.getItem(`xtap_boost_until_${user.id}`)) || 0;
     let currentCaptcha = "";
 
-    // 3D Press Effect & Haptic Feedback
     function triggerCoinTapVisual() {
       const core = document.getElementById('tokenCoreStage');
       if (core) {
@@ -853,12 +883,26 @@
             last_claim_time: new Date()
           }]).select().single();
           data = created;
+          lastClaimTime = Date.now();
+          localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
         } else if (data) {
           poolBalance = Math.max(parseFloat(data.pool_balance) || 0, poolBalance);
           isHumanVerified = data.is_verified || false;
           bscAddress = data.wallet_address || "";
-          if (data.last_claim_time) lastClaimTime = new Date(data.last_claim_time).getTime();
+          
+          if (data.last_claim_time) {
+            const dbTime = new Date(data.last_claim_time).getTime();
+            if (!lastClaimTime || dbTime > lastClaimTime) {
+              lastClaimTime = dbTime;
+              localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
+            }
+          }
           await client.from('users').update({ user_ip: userIp, device_id: deviceId, pool_balance: poolBalance }).eq('telegram_id', user.id);
+        }
+
+        if (!lastClaimTime) {
+          lastClaimTime = Date.now();
+          localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
         }
 
         localStorage.setItem(`xtap_bal_${user.id}`, poolBalance);
@@ -1018,12 +1062,20 @@
       await client.from('users').update({ is_verified: true }).eq('telegram_id', user.id);
     }
 
+    // নির্ভুল ৩-ঘণ্টা অটো ফার্মিং ইঞ্জিন (নো অটো-ক্লেইম)
     setInterval(() => {
-      const elapsed = Date.now() - lastClaimTime;
+      if (!lastClaimTime) return;
+      
+      const now = Date.now();
+      const elapsed = now - lastClaimTime;
       const progress = Math.min(elapsed / cycleDurationMs, 1);
-      uncollectedMining = progress * cycleMaxReward;
+      
+      // বুস্ট চেক
+      const isBoosted = now < boostUntil;
+      const currentCycleReward = isBoosted ? (cycleBaseReward * 1.5) : cycleBaseReward;
+      const uncollected = progress * currentCycleReward;
 
-      document.getElementById('liveMiningCounter').innerText = `+${uncollectedMining.toFixed(4)}`;
+      document.getElementById('liveMiningCounter').innerText = `+${uncollected.toFixed(4)}${isBoosted ? ' (1.5x)' : ''}`;
 
       const remainingMs = Math.max(cycleDurationMs - elapsed, 0);
       const hrs = String(Math.floor(remainingMs / 3600000)).padStart(2, '0');
@@ -1031,30 +1083,47 @@
       const secs = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, '0');
 
       const claimBtn = document.getElementById('claimBtn');
+      const timerLabel = document.getElementById('miningTimer');
+
       if (progress >= 1) {
-        document.getElementById('miningTimer').innerText = "Vault Capacity Reached";
-        claimBtn.innerText = "CLAIM XTAP";
+        // ৩ ঘণ্টা পূর্ণ হয়েছে - এখন ক্লেইম করা যাবে
+        timerLabel.innerText = "Vault Full! Ready to Claim";
+        claimBtn.innerText = `CLAIM (${uncollected.toFixed(4)} XTAP)`;
+        claimBtn.className = "primary-cta-btn ready-claim";
+        claimBtn.disabled = false;
       } else {
-        document.getElementById('miningTimer').innerText = `Cycle: ${hrs}:${mins}:${secs}`;
-        claimBtn.innerText = `CLAIM (+${uncollectedMining.toFixed(4)})`;
+        // ফার্মিং চলছে - ক্লেইম বাটন ডিজেবল থাকবে
+        timerLabel.innerText = `Farming: ${hrs}:${mins}:${secs}`;
+        claimBtn.innerText = `FARMING (${hrs}:${mins}:${secs})`;
+        claimBtn.className = "primary-cta-btn in-progress";
+        claimBtn.disabled = true;
       }
     }, 1000);
 
+    // ইউজার নিজে ক্লিক করলে ক্লেইম হবে
     async function handleClaimOrStart() {
-      if (uncollectedMining <= 0.0001) {
-        alert("Mining cycle ongoing. Vault is collecting tokens.");
+      const now = Date.now();
+      const elapsed = now - lastClaimTime;
+
+      if (elapsed < cycleDurationMs) {
+        alert("Farming is in progress! You can claim once the 3-hour cycle is complete.");
         return;
       }
-      poolBalance += uncollectedMining;
-      uncollectedMining = 0;
-      lastClaimTime = Date.now();
+
+      const isBoosted = now < boostUntil;
+      const reward = isBoosted ? (cycleBaseReward * 1.5) : cycleBaseReward;
+
+      poolBalance += reward;
+      lastClaimTime = now;
+      localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
       updateBalancesUI();
 
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      alert(`🎉 Claimed +${reward.toFixed(4)} XTAP! Next 3-hour cycle started.`);
 
       await client.from('users').update({ 
         pool_balance: poolBalance,
-        last_claim_time: new Date()
+        last_claim_time: new Date(lastClaimTime).toISOString()
       }).eq('telegram_id', user.id);
     }
 
@@ -1072,7 +1141,7 @@
       { id: 2, icon: '📢', title: 'Join Official Telegram Channel', reward: 3, url: 'https://t.me/Cryptotapxofficial', type: 'social' },
       { id: 3, icon: '💬', title: 'Join Telegram Community Group', reward: 3, url: 'https://t.me/xtapsuppurt', type: 'social' },
       { id: 4, icon: '✖️', title: 'Follow Official X (Twitter)', reward: 3, url: 'https://x.com/xtapcrypto', type: 'social' },
-      { id: 99, icon: '⚡', title: '2-Hour Kinetic Booster', reward: 0.5, url: '', type: 'booster' }
+      { id: 99, icon: '⚡', title: '2-Hour 1.5x Speed Booster', reward: 0, url: '', type: 'booster' }
     ];
 
     const TASK_COOLDOWN_MS = 2 * 60 * 60 * 1000;
@@ -1087,40 +1156,29 @@
         recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
       });
 
-      // লোকাল ব্যাকআপ বুস্ট টাইম চেক
-      const localBoostTime = parseInt(localStorage.getItem(`last_boost_${user.id}`)) || 0;
-      if (localBoostTime > (recordMap[99] || 0)) {
-        recordMap[99] = localBoostTime;
-      }
-
       container.innerHTML = '';
       const now = Date.now();
 
       officialTasks.forEach(t => {
         const lastDone = recordMap[t.id];
         let isDone = false;
-        let btnText = "Execute";
+        let btnText = "Start";
         let cooldownLeft = 0;
 
         if (t.type === 'social') {
           if (lastDone) {
             isDone = true;
-            btnText = "Cleared ✓";
+            btnText = "Claimed ✓";
           }
         } else if (t.type === 'booster') {
-          if (lastDone) {
-            const diff = now - lastDone;
-            if (diff < TASK_COOLDOWN_MS) {
-              isDone = true;
-              cooldownLeft = TASK_COOLDOWN_MS - diff;
-              const hrs = String(Math.floor(cooldownLeft / 3600000)).padStart(2, '0');
-              const mins = String(Math.floor((cooldownLeft % 3600000) / 60000)).padStart(2, '0');
-              btnText = `${hrs}h ${mins}m`;
-            } else {
-              btnText = "Boost";
-            }
+          if (boostUntil > now) {
+            isDone = true;
+            cooldownLeft = boostUntil - now;
+            const hrs = String(Math.floor(cooldownLeft / 3600000)).padStart(2, '0');
+            const mins = String(Math.floor((cooldownLeft % 3600000) / 60000)).padStart(2, '0');
+            btnText = `Active ${hrs}h ${mins}m`;
           } else {
-            btnText = "Boost";
+            btnText = "Activate";
           }
         }
 
@@ -1131,7 +1189,7 @@
             <div class="meta-icon-badge">${t.icon}</div>
             <div class="meta-text-box">
               <h4>${t.title}</h4>
-              <p style="color:var(--neon-green);">+${t.reward} XTAP</p>
+              <p style="color:var(--neon-green);">${t.type === 'booster' ? '1.5x Speed Boost' : '+' + t.reward + ' XTAP'}</p>
             </div>
           </div>
           <button class="btn-action-small ${isDone ? '' : 'active-highlight'}" id="btn-task-${t.id}" ${isDone ? 'disabled' : ''} onclick="handleTaskAction(${t.id}, '${t.url}', ${t.reward}, '${t.type}')">
@@ -1146,7 +1204,7 @@
 
     function handleTaskAction(id, url, reward, type) {
       if (type === 'booster') {
-        executeBoosterClaim(id, reward);
+        activateBooster(id);
         return;
       }
 
@@ -1154,17 +1212,17 @@
       if (!taskChecks[id]) {
         window.open(url, '_blank');
         taskChecks[id] = true;
-        btn.innerText = "Syncing (10s)...";
+        btn.innerText = "Verifying (10s)...";
         btn.disabled = true;
 
         let seconds = 10;
         const timer = setInterval(() => {
           seconds--;
           if (seconds > 0) {
-            btn.innerText = `Syncing (${seconds}s)...`;
+            btn.innerText = `Verifying (${seconds}s)...`;
           } else {
             clearInterval(timer);
-            btn.innerText = "Claim Reward";
+            btn.innerText = "Claim XTAP";
             btn.style.background = "var(--neon-green)";
             btn.style.color = "#000";
             btn.disabled = false;
@@ -1176,34 +1234,20 @@
       completeTask(id, reward);
     }
 
-    // বুস্টারের জন্য ডেডিকেটেড এক্সিকিউশন
-    async function executeBoosterClaim(id, reward) {
-      const btn = document.getElementById(`btn-task-${id}`);
-      btn.innerText = "Boosting...";
-      btn.disabled = true;
-
-      poolBalance += reward;
-      updateBalancesUI();
-
-      const nowIso = new Date().toISOString();
-      localStorage.setItem(`last_boost_${user.id}`, Date.now());
-
-      await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
-      await client.from('user_tasks').upsert({ 
-        telegram_id: user.id, 
-        task_id: id,
-        completed_at: nowIso,
-        last_completed_at: nowIso
-      }, { onConflict: 'telegram_id,task_id' });
+    // ২ ঘণ্টার জন্য ১.৫ গুণ স্পিড বুস্টার চালু
+    async function activateBooster(id) {
+      const now = Date.now();
+      boostUntil = now + (2 * 60 * 60 * 1000);
+      localStorage.setItem(`xtap_boost_until_${user.id}`, boostUntil);
 
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-      alert(`⚡ Kinetic Boost Activated!\n+${reward} XTAP credited to your Vault.`);
+      alert("⚡ Kinetic Boost Activated! Your farming speed is increased by 1.5x for the next 2 hours.");
       renderTasks();
     }
 
     async function completeTask(id, reward) {
       const btn = document.getElementById(`btn-task-${id}`);
-      btn.innerText = "Settling...";
+      btn.innerText = "Claiming...";
       btn.disabled = true;
 
       poolBalance += reward;
@@ -1232,4 +1276,5 @@
   </script>
 </body>
 </html>
+
 
