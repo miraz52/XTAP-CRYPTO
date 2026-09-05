@@ -172,42 +172,46 @@
       letter-spacing: 0.5px;
     }
 
-    /* Coin Stage */
+    /* 3D Dynamic Floating Stage */
     .coin-stage-wrap {
       position: relative;
-      width: 250px;
-      height: 250px;
+      width: 260px;
+      height: 260px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 25px 0 15px;
+      margin: 20px 0 10px;
+      perspective: 1000px;
     }
 
     .stage-glow-back {
       position: absolute;
-      width: 210px;
-      height: 210px;
-      background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(6, 182, 212, 0.15) 50%, transparent 75%);
       border-radius: 50%;
-      filter: blur(25px);
+      filter: blur(30px);
       z-index: 1;
       pointer-events: none;
+      animation: pulseAura 4s ease-in-out infinite alternate;
     }
 
     .rotating-halo {
       position: absolute;
-      width: 236px;
-      height: 236px;
+      width: 248px;
+      height: 248px;
       border-radius: 50%;
-      border: 1px dashed rgba(245, 158, 11, 0.3);
-      animation: rotateRing 30s linear infinite;
+      border: 2px dashed rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+      animation: rotateRing 20s linear infinite;
       z-index: 2;
       pointer-events: none;
     }
 
+    /* 3D Floating Token with Depth & Tilt */
     .token-art-container {
-      width: 205px;
-      height: 205px;
+      width: 215px;
+      height: 215px;
       border-radius: 50%;
       position: relative;
       z-index: 3;
@@ -215,14 +219,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+      animation: float3D 5s ease-in-out infinite;
       box-shadow: 
-        0 15px 35px rgba(0, 0, 0, 0.7),
-        0 0 40px var(--gold-glow);
+        0 25px 45px rgba(0, 0, 0, 0.8),
+        0 0 50px rgba(245, 158, 11, 0.35),
+        inset 0 0 20px rgba(245, 158, 11, 0.2);
+      transition: transform 0.12s ease-out;
     }
 
-    .token-art-container:active {
-      transform: scale(0.94);
+    /* Circular Bezel Rim for 3D metallic coin edge */
+    .token-art-container::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(135deg, #fbbf24 0%, #78350f 50%, #f59e0b 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
     }
 
     .token-art-image {
@@ -231,34 +249,31 @@
       border-radius: 50%;
       object-fit: cover;
       display: block;
+      filter: contrast(1.1) brightness(1.05);
     }
 
-    .vector-token-fallback {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #fbbf24 0%, #d97706 60%, #78350f 100%);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      border: 3px solid #fef3c7;
-      box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+    /* 3D Keyframe Animations */
+    @keyframes float3D {
+      0% {
+        transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+      }
+      25% {
+        transform: translateY(-8px) rotateX(8deg) rotateY(10deg);
+      }
+      50% {
+        transform: translateY(0px) rotateX(0deg) rotateY(-8deg);
+      }
+      75% {
+        transform: translateY(8px) rotateX(-8deg) rotateY(6deg);
+      }
+      100% {
+        transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+      }
     }
 
-    .vector-token-fallback span.symbol {
-      font-size: 38px;
-      font-weight: 900;
-      color: #451a03;
-      letter-spacing: 1px;
-      text-shadow: 0 1px 1px rgba(255,255,255,0.4);
-    }
-
-    .vector-token-fallback span.sub {
-      font-size: 10px;
-      font-weight: 800;
-      color: #78350f;
-      letter-spacing: 2px;
+    @keyframes pulseAura {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      100% { transform: scale(1.15); opacity: 0.9; }
     }
 
     .primary-cta-btn {
@@ -571,16 +586,10 @@
       <div class="rotating-halo"></div>
       
       <div class="token-art-container" id="tokenCoreStage" onclick="triggerCoinTapVisual()">
-        <img src="coin.png?v=fixed" 
+        <img src="coin.png" 
              class="token-art-image" 
              id="coinInteractive" 
-             alt="XTAP Token"
-             onerror="this.style.display='none'; document.getElementById('vectorFallback').style.display='flex';" />
-        
-        <div class="vector-token-fallback" id="vectorFallback">
-          <span class="symbol">XTAP</span>
-          <span class="sub">NETWORK</span>
-        </div>
+             alt="XTAP Token" />
       </div>
     </div>
 
@@ -704,7 +713,7 @@
         </div>
       </div>
 
-      <!-- Professional Pre-TGE Locked Airdrop Card (Replaces fake Withdraw button) -->
+      <!-- Professional Pre-TGE Locked Airdrop Card -->
       <div class="glass-card">
         <div class="card-meta-left">
           <div class="meta-icon-badge">📦</div>
@@ -806,8 +815,16 @@
     let uncollectedMining = 0;
     let currentCaptcha = "";
 
+    // 3D Tap Visual & Heavy Haptic Feedback
     function triggerCoinTapVisual() {
-      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+      const core = document.getElementById('tokenCoreStage');
+      if (core) {
+        core.style.transform = 'scale(0.92) translateZ(-25px)';
+        setTimeout(() => {
+          core.style.transform = '';
+        }, 120);
+      }
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
     }
 
     function getDeviceFingerprint() {
