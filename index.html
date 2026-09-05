@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>XTAP NETWORK | Official ATF Ecosystem</title>
+  <title>XTAP NETWORK | Anti-Cheat ATF Ecosystem</title>
   
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -41,7 +41,7 @@
       padding-bottom: 75px;
     }
 
-    /* Top Status Bar */
+    /* Top Bar */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -149,25 +149,27 @@
     }
     .podium-container {
       position: relative;
-      width: 250px;
-      height: 250px;
+      width: 220px;
+      height: 220px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 5px 0;
+      margin: 10px 0;
     }
     .coin-img {
-      width: 215px;
-      height: 215px;
+      width: 200px;
+      height: 200px;
       border-radius: 50%;
-      box-shadow: 0 0 50px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 45px rgba(245, 158, 11, 0.45);
       z-index: 2;
       object-fit: contain;
+      background: #121217;
+      transition: transform 0.2s;
     }
     .podium-glow {
       position: absolute;
       bottom: -15px;
-      width: 200px;
+      width: 180px;
       height: 35px;
       background: radial-gradient(ellipse, #f59e0b 0%, transparent 70%);
       opacity: 0.6;
@@ -187,7 +189,6 @@
       cursor: pointer;
       box-shadow: 0 4px 25px rgba(245, 158, 11, 0.4);
       margin-top: 15px;
-      transition: transform 0.1s;
     }
     .claim-btn:active {
       transform: scale(0.98);
@@ -250,11 +251,18 @@
       background: var(--primary-bright);
       color: #000;
       border: none;
-      padding: 8px 18px;
+      padding: 8px 16px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       cursor: pointer;
+      min-width: 85px;
+      transition: all 0.2s;
+    }
+    .yellow-action-btn.verify-mode {
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
     }
     .yellow-action-btn:disabled {
       background: rgba(255, 255, 255, 0.1);
@@ -262,7 +270,7 @@
       cursor: not-allowed;
     }
 
-    /* Bottom Navigation */
+    /* 5-Tab Navigation */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -307,14 +315,14 @@
 </head>
 <body>
 
-  <!-- Top Status Bar -->
+  <!-- Top Bar -->
   <div class="top-bar">
     <div class="level-badge-box">
       <div class="level-pill">
         <span>Lvl 1</span>
         <span style="color: #10b981;">● READY</span>
       </div>
-      <span class="level-sub" id="farmingStatusText">Auto-Farming Active</span>
+      <span class="level-sub">ATF Node Active</span>
     </div>
     <div class="wallet-pill" id="tonWalletBtn">
       <span id="walletShort">Connect Wallet</span>
@@ -322,7 +330,7 @@
     </div>
   </div>
 
-  <!-- TAB 1: MINE VIEW -->
+  <!-- TAB 1: MINE -->
   <div id="view-mine" class="view-content active">
     <div class="assets-header">
       <div class="assets-title">ASSETS</div>
@@ -336,26 +344,30 @@
       </div>
     </div>
 
-    <!-- Live Mining Rate Counter -->
     <div class="live-increment" id="liveMiningCounter">+0.0000</div>
-    <div class="timer-badge" id="miningTimer">Cycle: 03:00:00</div>
+    <div class="timer-badge" id="miningTimer">Farming: 03:00:00</div>
 
+    <!-- 3D Coin with Robust Multi-Fallback & Cache Buster -->
     <div class="podium-container">
-      <img src="coin.png" class="coin-img" id="coinInteractive" alt="XTAP Token" />
+      <img src="coin.png?v=3" 
+           onerror="if(this.src.indexOf('coin.png')!==-1){this.src='coin.jpg?v=3';}else if(this.src.indexOf('coin.jpg')!==-1){this.src='coin.PNG?v=3';}else{this.src='https://raw.githubusercontent.com/ton-community/assets/main/tokens/ton.png';}" 
+           class="coin-img" 
+           id="coinInteractive" 
+           alt="XTAP Token" />
       <div class="podium-glow"></div>
     </div>
 
     <button class="claim-btn" id="claimBtn" onclick="handleClaimOrStart()">START FARMING</button>
   </div>
 
-  <!-- TAB 2: TASKS VIEW -->
+  <!-- TAB 2: TASKS -->
   <div id="view-tasks" class="view-content">
     <h2 class="page-title">Earn Rewards</h2>
-    <p class="page-subtitle">Rewards go directly to Pool Wallet</p>
+    <p class="page-subtitle">Tasks cycle every 2 hours. Complete & verify to claim.</p>
     <div class="list-wrapper" id="tasksContainer"></div>
   </div>
 
-  <!-- TAB 3: MINERS VIEW -->
+  <!-- TAB 3: MINERS -->
   <div id="view-miners" class="view-content">
     <h2 class="page-title">Hardware Miners</h2>
     <p class="page-subtitle">Upgrade rigs to boost base ATF farming rate</p>
@@ -383,16 +395,16 @@
     </div>
   </div>
 
-  <!-- TAB 4: FRIENDS VIEW -->
+  <!-- TAB 4: FRIENDS -->
   <div id="view-friends" class="view-content">
     <h2 class="page-title">Friends</h2>
-    <p class="page-subtitle">Invite friends to boost mining speed!</p>
+    <p class="page-subtitle">Direct WebApp link for instant app launch</p>
     <div class="list-wrapper">
       <div class="card-item">
         <div class="card-left">
           <div class="card-icon">🔗</div>
           <div class="card-meta">
-            <h4>Your Invite Link</h4>
+            <h4>Direct App Link</h4>
             <p id="refLinkDisplay">Loading link...</p>
           </div>
         </div>
@@ -403,7 +415,7 @@
           <div class="card-icon">👥</div>
           <div class="card-meta">
             <h4>Your Referrals</h4>
-            <p>0 successful · 0 total</p>
+            <p id="refCountText">0 successful</p>
           </div>
         </div>
       </div>
@@ -412,15 +424,15 @@
           <div class="card-icon">🎁</div>
           <div class="card-meta">
             <h4>Referral Reward</h4>
-            <p>0 available · +100 XTAP each</p>
+            <p>+100 XTAP per verified friend</p>
           </div>
         </div>
-        <button class="yellow-action-btn" disabled style="background: rgba(255, 255, 255, 0.1); color: #71717a;">Claim</button>
+        <button class="yellow-action-btn" disabled style="background: rgba(255, 255, 255, 0.1); color: #71717a;">Auto</button>
       </div>
     </div>
   </div>
 
-  <!-- TAB 5: PROFILE VIEW -->
+  <!-- TAB 5: PROFILE -->
   <div id="view-profile" class="view-content">
     <h2 class="page-title">Profile</h2>
     <div class="list-wrapper" style="margin-top: 15px;">
@@ -445,24 +457,13 @@
       </div>
       <div class="card-item">
         <div class="card-left">
-          <div class="card-icon">💰</div>
-          <div class="card-meta">
-            <h4>Total Assets</h4>
-            <p id="profileAssetAmt">0.0000 XTAP</p>
-          </div>
-        </div>
-      </div>
-      <div class="card-item">
-        <div class="card-left">
           <div class="card-icon">🏦</div>
           <div class="card-meta">
-            <h4>Pool Wallet</h4>
-            <p style="color:#10b981;"><span id="profilePoolAmt">0.0000</span> XTAP</p>
+            <h4>Pool Wallet Balance</h4>
+            <p style="color:#10b981; font-weight: 800;"><span id="profilePoolAmt">0.0000</span> XTAP</p>
           </div>
         </div>
       </div>
-      
-      <div style="margin-top: 10px; text-align: center; color: #71717a; font-size: 12px; font-weight: 700;">Controls</div>
       <div class="card-item">
         <div class="card-left">
           <div class="card-icon">↗️</div>
@@ -476,7 +477,7 @@
     </div>
   </div>
 
-  <!-- 5-Tab Navigation -->
+  <!-- Navigation -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="switchNav('mine', this)">
       <span style="font-size: 18px;">⚒️</span>
@@ -517,17 +518,19 @@
       username: "xtap_user"
     };
 
+    // Official Direct Mini-App Launch Link
+    const directAppLink = `https://t.me/XTAPCRYPTOBOT?start=${user.id}`;
     document.getElementById('profileUserId').innerText = user.id;
-    document.getElementById('refLinkDisplay').innerText = `https://t.me/XTAPCRYPTOBOT?start=${user.id}`;
+    document.getElementById('refLinkDisplay').innerText = directAppLink;
 
     let poolBalance = 0;
-    let isMining = false;
+    let isMining = true;
     let lastClaimTime = Date.now();
     const cycleDurationMs = 3 * 60 * 60 * 1000; // 3 Hours Cycle
-    const cycleMaxReward = 1.08; // Pro value
+    const cycleMaxReward = 1.08; // Total 1.08 XTAP per cycle
     let uncollectedMining = 0;
+    const TASK_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 Hours Task Cooldown
 
-    // Initialize Database
     async function initPlatform() {
       try {
         let { data } = await client.from('users').select('*').eq('telegram_id', user.id).single();
@@ -546,18 +549,15 @@
 
         if (data) {
           poolBalance = parseFloat(data.pool_balance) || 0;
-          isMining = data.is_mining ?? true;
-          if (data.last_claim_time) {
-            lastClaimTime = new Date(data.last_claim_time).getTime();
-          }
+          if (data.last_claim_time) lastClaimTime = new Date(data.last_claim_time).getTime();
           if (data.wallet_address) {
             const w = data.wallet_address;
             document.getElementById('walletShort').innerText = `${w.substring(0, 4)}...${w.substring(w.length - 4)}`;
           }
-          updateBalancesUI();
         }
+        updateBalancesUI();
       } catch (err) {
-        console.error("DB Error:", err);
+        console.error("DB Init Error:", err);
       }
     }
 
@@ -565,14 +565,11 @@
       const formatted = poolBalance.toFixed(4);
       document.getElementById('totalAssets').innerText = formatted;
       document.getElementById('poolText').innerText = formatted;
-      document.getElementById('profileAssetAmt').innerText = `${formatted} XTAP`;
       document.getElementById('profilePoolAmt').innerText = formatted;
     }
 
-    // Auto-Farming Engine
+    // Real-Time ATF Auto-Mining Engine
     setInterval(() => {
-      if (!isMining) return;
-
       const elapsed = Date.now() - lastClaimTime;
       const progress = Math.min(elapsed / cycleDurationMs, 1);
       uncollectedMining = progress * cycleMaxReward;
@@ -588,34 +585,23 @@
       if (progress >= 1) {
         document.getElementById('miningTimer').innerText = "Storage Full! Claim Now";
         claimBtn.innerText = "CLAIM XTAP";
-        claimBtn.style.background = "linear-gradient(90deg, #f59e0b, #eab308)";
       } else {
         document.getElementById('miningTimer').innerText = `Farming: ${hrs}:${mins}:${secs}`;
         claimBtn.innerText = `CLAIM (+${uncollectedMining.toFixed(4)})`;
-        claimBtn.style.background = "linear-gradient(90deg, #f59e0b, #eab308)";
       }
     }, 1000);
 
     async function handleClaimOrStart() {
-      if (!isMining) {
-        isMining = true;
-        lastClaimTime = Date.now();
-        await client.from('users').update({ is_mining: true, last_claim_time: new Date() }).eq('telegram_id', user.id);
-        return;
-      }
-
       if (uncollectedMining <= 0.0001) {
-        alert("Wait a few moments for tokens to be farmed!");
+        alert("Farming is ongoing! Please wait for tokens to gather.");
         return;
       }
-
       poolBalance += uncollectedMining;
       uncollectedMining = 0;
       lastClaimTime = Date.now();
       updateBalancesUI();
 
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-      alert("Tokens claimed into your Pool Wallet!");
 
       await client.from('users').update({ 
         pool_balance: poolBalance,
@@ -628,10 +614,10 @@
       document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
       el.classList.add('active');
       document.getElementById(`view-${tabName}`).classList.add('active');
+      updateBalancesUI();
       if (tabName === 'tasks') renderTasks();
     }
 
-    // Official Premium Tasks
     const officialTasks = [
       { id: 1, title: 'Subscribe YouTube Channel', reward: 3, url: 'https://youtube.com/@humancuriously-x1f' },
       { id: 2, title: 'Join Official Telegram Channel', reward: 3, url: 'https://t.me/Cryptotapxofficial' },
@@ -639,60 +625,118 @@
       { id: 4, title: 'Follow Official X (Twitter)', reward: 3, url: 'https://x.com/xtapcrypto' }
     ];
 
+    // Real-Time 2-Hour Cooldown & Anti-Cheat Task Engine
     async function renderTasks() {
       const container = document.getElementById('tasksContainer');
-      container.innerHTML = '<div style="text-align:center; color:#71717a;">Checking tasks...</div>';
+      container.innerHTML = '<div style="text-align:center; color:#71717a;">Syncing tasks...</div>';
 
-      const { data: completed } = await client.from('user_tasks').select('task_id').eq('telegram_id', user.id);
-      const completedMap = (completed || []).map(c => c.task_id);
+      const { data: records } = await client.from('user_tasks').select('*').eq('telegram_id', user.id);
+      const recordMap = {};
+      (records || []).forEach(r => {
+        recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
+      });
 
       container.innerHTML = '';
+      const now = Date.now();
+
       officialTasks.forEach(t => {
-        const isDone = completedMap.includes(t.id);
+        const lastDone = recordMap[t.id];
+        let isLocked = false;
+        let cooldownLeft = 0;
+
+        if (lastDone) {
+          const diff = now - lastDone;
+          if (diff < TASK_COOLDOWN_MS) {
+            isLocked = true;
+            cooldownLeft = TASK_COOLDOWN_MS - diff;
+          }
+        }
+
+        const hrs = String(Math.floor(cooldownLeft / 3600000)).padStart(2, '0');
+        const mins = String(Math.floor((cooldownLeft % 3600000) / 60000)).padStart(2, '0');
+
         const item = document.createElement('div');
         item.className = 'card-item';
         item.innerHTML = `
           <div class="card-left">
-            <div class="card-icon">💬</div>
+            <div class="card-icon">⚡</div>
             <div class="card-meta">
               <h4>${t.title}</h4>
               <p style="color:#10b981; font-weight:700;">+${t.reward} XTAP</p>
             </div>
           </div>
-          <button class="yellow-action-btn" id="btn-task-${t.id}" ${isDone ? 'disabled' : ''} onclick="executeTask(${t.id}, '${t.url}', ${t.reward})">
-            ${isDone ? 'Completed ✓' : 'Go'}
+          <button class="yellow-action-btn" id="btn-task-${t.id}" ${isLocked ? 'disabled' : ''} onclick="startTaskAntiCheat(${t.id}, '${t.url}', ${t.reward})">
+            ${isLocked ? `Wait ${hrs}h ${mins}m` : 'Go'}
           </button>
         `;
         container.appendChild(item);
       });
     }
 
-    async function executeTask(id, url, reward) {
-      window.open(url, '_blank');
+    // Two-Step Verification Anti-Cheat (Must click, wait on link, then verify)
+    const activeVerifications = {};
+
+    function startTaskAntiCheat(id, url, reward) {
       const btn = document.getElementById(`btn-task-${id}`);
-      btn.innerText = "Checking...";
+      
+      // Step 1: User clicks GO -> Opens Link
+      if (!activeVerifications[id]) {
+        window.open(url, '_blank');
+        activeVerifications[id] = { startTime: Date.now() };
+        btn.innerText = "Checking (10s)...";
+        btn.disabled = true;
+
+        let seconds = 10;
+        const countdown = setInterval(() => {
+          seconds--;
+          if (seconds > 0) {
+            btn.innerText = `Checking (${seconds}s)...`;
+          } else {
+            clearInterval(countdown);
+            btn.innerText = "Verify & Claim";
+            btn.classList.add('verify-mode');
+            btn.disabled = false;
+          }
+        }, 1000);
+        return;
+      }
+
+      // Step 2: Anti-Cheat Pass -> Claim Reward & Lock for 2 Hours
+      completeTaskReward(id, reward);
+    }
+
+    async function completeTaskReward(id, reward) {
+      const btn = document.getElementById(`btn-task-${id}`);
+      btn.innerText = "Claiming...";
       btn.disabled = true;
 
-      setTimeout(async () => {
-        poolBalance += reward;
-        updateBalancesUI();
-        await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
-        await client.from('user_tasks').insert([{ telegram_id: user.id, task_id: id }]);
-        btn.innerText = "Completed ✓";
-        alert(`+${reward} XTAP credited to your Pool Wallet!`);
-      }, 5000);
+      poolBalance += reward;
+      updateBalancesUI();
+
+      await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
+      await client.from('user_tasks').upsert({ 
+        telegram_id: user.id, 
+        task_id: id, 
+        last_completed_at: new Date().toISOString() 
+      }, { onConflict: 'telegram_id,task_id' });
+
+      delete activeVerifications[id];
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      alert(`Verified! +${reward} XTAP credited to your Pool Wallet.`);
+      renderTasks();
     }
 
     function copyRefLink() {
-      navigator.clipboard.writeText(`https://t.me/XTAPCRYPTOBOT?start=${user.id}`);
-      alert("Official invite link copied!");
+      navigator.clipboard.writeText(directAppLink);
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      alert("Direct Mini-App invite link copied!");
     }
 
     function handleWithdraw() {
       alert("Withdrawals will unlock upon official TON mainnet distribution.");
     }
 
-    // Official TON Connect 2.0
+    // TON Connect 2.0 Integration
     const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
       manifestUrl: 'https://xtap-crypto.vercel.app/tonconnect-manifest.json',
       buttonRootId: 'tonWalletBtn'
