@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>XTAP NETWORK | Anti-Cheat ATF Ecosystem</title>
+  <title>XTAP NETWORK | Anti-Bot Security Core</title>
   
-  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Official TON Connect UI SDK -->
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
   <style>
@@ -17,6 +14,7 @@
       --primary: #f59e0b;
       --primary-bright: #fbbf24;
       --green: #10b981;
+      --red: #ef4444;
       --bg-dark: #070709;
       --card-bg: #121217;
       --card-border: rgba(255, 255, 255, 0.08);
@@ -97,7 +95,7 @@
       display: flex;
     }
 
-    /* MINE TAB */
+    /* MINE */
     .assets-header {
       text-align: center;
       margin-top: 5px;
@@ -162,9 +160,7 @@
       border-radius: 50%;
       box-shadow: 0 0 45px rgba(245, 158, 11, 0.45);
       z-index: 2;
-      object-fit: contain;
-      background: #121217;
-      transition: transform 0.2s;
+      object-fit: cover;
     }
     .podium-glow {
       position: absolute;
@@ -229,14 +225,14 @@
       gap: 12px;
     }
     .card-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
       background: rgba(255, 255, 255, 0.05);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 20px;
     }
     .card-meta h4 {
       font-size: 13px;
@@ -257,12 +253,10 @@
       font-weight: 800;
       cursor: pointer;
       min-width: 85px;
-      transition: all 0.2s;
     }
     .yellow-action-btn.verify-mode {
       background: #10b981;
       color: #fff;
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
     }
     .yellow-action-btn:disabled {
       background: rgba(255, 255, 255, 0.1);
@@ -270,7 +264,99 @@
       cursor: not-allowed;
     }
 
-    /* 5-Tab Navigation */
+    /* REAL HUMAN VERIFICATION MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-box {
+      background: #15151c;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 20px;
+      padding: 22px 18px;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+    .modal-box h3 {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: #fbbf24;
+    }
+    .modal-box p {
+      font-size: 12px;
+      color: #a1a1aa;
+      margin-bottom: 15px;
+      line-height: 1.4;
+    }
+
+    /* Canvas Captcha Box */
+    .captcha-container {
+      background: #09090d;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    #captchaCanvas {
+      background: #1f1f28;
+      border-radius: 8px;
+      letter-spacing: 4px;
+    }
+    .refresh-captcha {
+      color: #fbbf24;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .captcha-input {
+      width: 100%;
+      background: #09090d;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    .captcha-input:focus {
+      border-color: #fbbf24;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Bottom Navigation */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -322,7 +408,7 @@
         <span>Lvl 1</span>
         <span style="color: #10b981;">● READY</span>
       </div>
-      <span class="level-sub">ATF Node Active</span>
+      <span class="level-sub">XTAP Node Active</span>
     </div>
     <div class="wallet-pill" id="tonWalletBtn">
       <span id="walletShort">Connect Wallet</span>
@@ -347,10 +433,9 @@
     <div class="live-increment" id="liveMiningCounter">+0.0000</div>
     <div class="timer-badge" id="miningTimer">Farming: 03:00:00</div>
 
-    <!-- 3D Coin with Robust Multi-Fallback & Cache Buster -->
     <div class="podium-container">
-      <img src="coin.png?v=3" 
-           onerror="if(this.src.indexOf('coin.png')!==-1){this.src='coin.jpg?v=3';}else if(this.src.indexOf('coin.jpg')!==-1){this.src='coin.PNG?v=3';}else{this.src='https://raw.githubusercontent.com/ton-community/assets/main/tokens/ton.png';}" 
+      <img src="coin.png?v=6" 
+           onerror="if(this.src.indexOf('coin.png')!==-1){this.src='coin.jpg?v=6';}else if(this.src.indexOf('coin.jpg')!==-1){this.src='coin.PNG?v=6';}else{this.src='https://raw.githubusercontent.com/ton-community/assets/main/tokens/ton.png';}" 
            class="coin-img" 
            id="coinInteractive" 
            alt="XTAP Token" />
@@ -363,14 +448,14 @@
   <!-- TAB 2: TASKS -->
   <div id="view-tasks" class="view-content">
     <h2 class="page-title">Earn Rewards</h2>
-    <p class="page-subtitle">Tasks cycle every 2 hours. Complete & verify to claim.</p>
+    <p class="page-subtitle">Complete official tasks to earn permanent XTAP rewards</p>
     <div class="list-wrapper" id="tasksContainer"></div>
   </div>
 
   <!-- TAB 3: MINERS -->
   <div id="view-miners" class="view-content">
     <h2 class="page-title">Hardware Miners</h2>
-    <p class="page-subtitle">Upgrade rigs to boost base ATF farming rate</p>
+    <p class="page-subtitle">Upgrade rigs to boost base XTAP farming rate</p>
     <div class="list-wrapper">
       <div class="card-item">
         <div class="card-left">
@@ -381,16 +466,6 @@
           </div>
         </div>
         <button class="yellow-action-btn">50 XTAP</button>
-      </div>
-      <div class="card-item">
-        <div class="card-left">
-          <div class="card-icon">🚀</div>
-          <div class="card-meta">
-            <h4>Quantum Rig Pro</h4>
-            <p>+0.25 XTAP / hour</p>
-          </div>
-        </div>
-        <button class="yellow-action-btn">250 XTAP</button>
       </div>
     </div>
   </div>
@@ -419,16 +494,6 @@
           </div>
         </div>
       </div>
-      <div class="card-item">
-        <div class="card-left">
-          <div class="card-icon">🎁</div>
-          <div class="card-meta">
-            <h4>Referral Reward</h4>
-            <p>+100 XTAP per verified friend</p>
-          </div>
-        </div>
-        <button class="yellow-action-btn" disabled style="background: rgba(255, 255, 255, 0.1); color: #71717a;">Auto</button>
-      </div>
     </div>
   </div>
 
@@ -445,16 +510,19 @@
           </div>
         </div>
       </div>
+
+      <!-- Human Verification Card -->
       <div class="card-item">
         <div class="card-left">
-          <div class="card-icon">✅</div>
+          <div class="card-icon" id="kycIcon">🛡️</div>
           <div class="card-meta">
-            <h4>Account Verification</h4>
-            <p>Verified Telegram User</p>
+            <h4>Human Verification</h4>
+            <p id="kycStatusDesc">Pass anti-bot challenge</p>
           </div>
         </div>
-        <button class="yellow-action-btn" style="background:#10b981; color:#fff;">Active</button>
+        <button class="yellow-action-btn" id="kycActionBtn" onclick="openHumanChallenge()">Verify</button>
       </div>
+
       <div class="card-item">
         <div class="card-left">
           <div class="card-icon">🏦</div>
@@ -464,6 +532,7 @@
           </div>
         </div>
       </div>
+
       <div class="card-item">
         <div class="card-left">
           <div class="card-icon">↗️</div>
@@ -477,7 +546,27 @@
     </div>
   </div>
 
-  <!-- Navigation -->
+  <!-- REAL HUMAN ANTI-BOT CAPTCHA CHALLENGE MODAL -->
+  <div class="modal-overlay" id="humanModal">
+    <div class="modal-box">
+      <h3>Proof of Humanity</h3>
+      <p>Type the distorted code below to prove you are a real human and prevent Sybil bot abuse.</p>
+      
+      <div class="captcha-container">
+        <canvas id="captchaCanvas" width="200" height="65"></canvas>
+        <span class="refresh-captcha" onclick="generateCaptcha()">🔄 Refresh Code</span>
+      </div>
+
+      <input type="text" id="captchaInputField" class="captcha-input" placeholder="ENTER CODE" maxlength="6" />
+
+      <div class="modal-buttons">
+        <button class="modal-btn" style="background:#27272a; color:#fff;" onclick="closeHumanChallenge()">Cancel</button>
+        <button class="modal-btn" style="background:#10b981; color:#000;" onclick="validateHumanChallenge()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
   <div class="bottom-nav">
     <div class="nav-item active" onclick="switchNav('mine', this)">
       <span style="font-size: 18px;">⚒️</span>
@@ -518,18 +607,19 @@
       username: "xtap_user"
     };
 
-    // Official Direct Mini-App Launch Link
     const directAppLink = `https://t.me/XTAPCRYPTOBOT?start=${user.id}`;
     document.getElementById('profileUserId').innerText = user.id;
     document.getElementById('refLinkDisplay').innerText = directAppLink;
 
     let poolBalance = 0;
     let isMining = true;
+    let isHumanVerified = false;
     let lastClaimTime = Date.now();
-    const cycleDurationMs = 3 * 60 * 60 * 1000; // 3 Hours Cycle
-    const cycleMaxReward = 1.08; // Total 1.08 XTAP per cycle
+    const cycleDurationMs = 3 * 60 * 60 * 1000;
+    const cycleMaxReward = 1.08;
     let uncollectedMining = 0;
-    const TASK_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 Hours Task Cooldown
+
+    let currentCaptcha = "";
 
     async function initPlatform() {
       try {
@@ -542,6 +632,7 @@
             pool_balance: 0,
             holding_balance: 0,
             is_mining: true,
+            is_verified: false,
             last_claim_time: new Date()
           }]).select().single();
           data = created;
@@ -549,6 +640,7 @@
 
         if (data) {
           poolBalance = parseFloat(data.pool_balance) || 0;
+          isHumanVerified = data.is_verified || false;
           if (data.last_claim_time) lastClaimTime = new Date(data.last_claim_time).getTime();
           if (data.wallet_address) {
             const w = data.wallet_address;
@@ -556,8 +648,9 @@
           }
         }
         updateBalancesUI();
+        updateKycUI();
       } catch (err) {
-        console.error("DB Init Error:", err);
+        console.error("Init Error:", err);
       }
     }
 
@@ -568,7 +661,106 @@
       document.getElementById('profilePoolAmt').innerText = formatted;
     }
 
-    // Real-Time ATF Auto-Mining Engine
+    function updateKycUI() {
+      const btn = document.getElementById('kycActionBtn');
+      const desc = document.getElementById('kycStatusDesc');
+      const icon = document.getElementById('kycIcon');
+      if (isHumanVerified) {
+        btn.innerText = "Verified ✓";
+        btn.style.background = "#10b981";
+        btn.style.color = "#fff";
+        btn.disabled = true;
+        desc.innerText = "Real Human Verified";
+        icon.innerText = "✅";
+      } else {
+        btn.innerText = "Verify";
+        btn.style.background = "var(--primary-bright)";
+        btn.style.color = "#000";
+        btn.disabled = false;
+        desc.innerText = "Pass anti-bot challenge";
+        icon.innerText = "🛡️";
+      }
+    }
+
+    // Dynamic Distorted Canvas CAPTCHA Generator (Anti-OCR & Anti-Script)
+    function generateCaptcha() {
+      const canvas = document.getElementById('captchaCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      currentCaptcha = "";
+      for (let i = 0; i < 5; i++) {
+        currentCaptcha += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      // Draw background noise lines
+      for (let i = 0; i < 7; i++) {
+        ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.35)`;
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // Draw distorted text
+      for (let i = 0; i < currentCaptcha.length; i++) {
+        ctx.save();
+        ctx.font = "bold 28px sans-serif";
+        ctx.fillStyle = i % 2 === 0 ? "#fbbf24" : "#10b981";
+        ctx.translate(25 + i * 32, 42);
+        ctx.rotate((Math.random() - 0.5) * 0.4);
+        ctx.fillText(currentCaptcha[i], 0, 0);
+        ctx.restore();
+      }
+
+      document.getElementById('captchaInputField').value = "";
+    }
+
+    function openHumanChallenge() {
+      if (isHumanVerified) return;
+      document.getElementById('humanModal').style.display = 'flex';
+      generateCaptcha();
+    }
+
+    function closeHumanChallenge() {
+      document.getElementById('humanModal').style.display = 'none';
+    }
+
+    let failAttempts = 0;
+
+    async function validateHumanChallenge() {
+      const input = document.getElementById('captchaInputField').value.trim().toUpperCase();
+      if (!input) {
+        alert("Please enter the code shown.");
+        return;
+      }
+
+      if (input !== currentCaptcha) {
+        failAttempts++;
+        if (failAttempts >= 3) {
+          alert("Anti-Bot Triggered: Too many failed attempts. Try again later.");
+          closeHumanChallenge();
+          failAttempts = 0;
+          return;
+        }
+        alert(`Incorrect code! ${3 - failAttempts} attempts remaining.`);
+        generateCaptcha();
+        return;
+      }
+
+      // Success: Confirmed Real Human
+      isHumanVerified = true;
+      closeHumanChallenge();
+      updateKycUI();
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      alert("Verification successful! You have passed the Human Verification challenge.");
+
+      await client.from('users').update({ is_verified: true }).eq('telegram_id', user.id);
+    }
+
+    // Mining Engine
     setInterval(() => {
       const elapsed = Date.now() - lastClaimTime;
       const progress = Math.min(elapsed / cycleDurationMs, 1);
@@ -618,81 +810,60 @@
       if (tabName === 'tasks') renderTasks();
     }
 
+    // Official Tasks
     const officialTasks = [
-      { id: 1, title: 'Subscribe YouTube Channel', reward: 3, url: 'https://youtube.com/@humancuriously-x1f' },
-      { id: 2, title: 'Join Official Telegram Channel', reward: 3, url: 'https://t.me/Cryptotapxofficial' },
-      { id: 3, title: 'Join Telegram Community Group', reward: 3, url: 'https://t.me/xtapsuppurt' },
-      { id: 4, title: 'Follow Official X (Twitter)', reward: 3, url: 'https://x.com/xtapcrypto' }
+      { id: 1, icon: '▶️', title: 'Subscribe YouTube Channel', reward: 3, url: 'https://youtube.com/@humancuriously-x1f' },
+      { id: 2, icon: '📢', title: 'Join Official Telegram Channel', reward: 3, url: 'https://t.me/Cryptotapxofficial' },
+      { id: 3, icon: '💬', title: 'Join Telegram Community Group', reward: 3, url: 'https://t.me/xtapsuppurt' },
+      { id: 4, icon: '✖️', title: 'Follow Official X (Twitter)', reward: 3, url: 'https://x.com/xtapcrypto' }
     ];
 
-    // Real-Time 2-Hour Cooldown & Anti-Cheat Task Engine
     async function renderTasks() {
       const container = document.getElementById('tasksContainer');
       container.innerHTML = '<div style="text-align:center; color:#71717a;">Syncing tasks...</div>';
 
-      const { data: records } = await client.from('user_tasks').select('*').eq('telegram_id', user.id);
-      const recordMap = {};
-      (records || []).forEach(r => {
-        recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
-      });
+      const { data: records } = await client.from('user_tasks').select('task_id').eq('telegram_id', user.id);
+      const completedIds = (records || []).map(r => r.task_id);
 
       container.innerHTML = '';
-      const now = Date.now();
-
       officialTasks.forEach(t => {
-        const lastDone = recordMap[t.id];
-        let isLocked = false;
-        let cooldownLeft = 0;
-
-        if (lastDone) {
-          const diff = now - lastDone;
-          if (diff < TASK_COOLDOWN_MS) {
-            isLocked = true;
-            cooldownLeft = TASK_COOLDOWN_MS - diff;
-          }
-        }
-
-        const hrs = String(Math.floor(cooldownLeft / 3600000)).padStart(2, '0');
-        const mins = String(Math.floor((cooldownLeft % 3600000) / 60000)).padStart(2, '0');
-
+        const isDone = completedIds.includes(t.id);
         const item = document.createElement('div');
         item.className = 'card-item';
         item.innerHTML = `
           <div class="card-left">
-            <div class="card-icon">⚡</div>
+            <div class="card-icon">${t.icon}</div>
             <div class="card-meta">
               <h4>${t.title}</h4>
               <p style="color:#10b981; font-weight:700;">+${t.reward} XTAP</p>
             </div>
           </div>
-          <button class="yellow-action-btn" id="btn-task-${t.id}" ${isLocked ? 'disabled' : ''} onclick="startTaskAntiCheat(${t.id}, '${t.url}', ${t.reward})">
-            ${isLocked ? `Wait ${hrs}h ${mins}m` : 'Go'}
+          <button class="yellow-action-btn" id="btn-task-${t.id}" ${isDone ? 'disabled' : ''} onclick="startTaskVerification(${t.id}, '${t.url}', ${t.reward})">
+            ${isDone ? 'Completed ✓' : 'Go'}
           </button>
         `;
         container.appendChild(item);
       });
     }
 
-    // Two-Step Verification Anti-Cheat (Must click, wait on link, then verify)
-    const activeVerifications = {};
+    const taskChecks = {};
 
-    function startTaskAntiCheat(id, url, reward) {
+    function startTaskVerification(id, url, reward) {
       const btn = document.getElementById(`btn-task-${id}`);
       
-      // Step 1: User clicks GO -> Opens Link
-      if (!activeVerifications[id]) {
+      if (!taskChecks[id]) {
         window.open(url, '_blank');
-        activeVerifications[id] = { startTime: Date.now() };
+        taskChecks[id] = true;
         btn.innerText = "Checking (10s)...";
         btn.disabled = true;
 
         let seconds = 10;
-        const countdown = setInterval(() => {
+        const timer = setInterval(() => {
           seconds--;
           if (seconds > 0) {
             btn.innerText = `Checking (${seconds}s)...`;
           } else {
-            clearInterval(countdown);
+            clearInterval(timer);
             btn.innerText = "Verify & Claim";
             btn.classList.add('verify-mode');
             btn.disabled = false;
@@ -701,11 +872,10 @@
         return;
       }
 
-      // Step 2: Anti-Cheat Pass -> Claim Reward & Lock for 2 Hours
-      completeTaskReward(id, reward);
+      completeTask(id, reward);
     }
 
-    async function completeTaskReward(id, reward) {
+    async function completeTask(id, reward) {
       const btn = document.getElementById(`btn-task-${id}`);
       btn.innerText = "Claiming...";
       btn.disabled = true;
@@ -716,14 +886,15 @@
       await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
       await client.from('user_tasks').upsert({ 
         telegram_id: user.id, 
-        task_id: id, 
-        last_completed_at: new Date().toISOString() 
+        task_id: id,
+        completed_at: new Date().toISOString()
       }, { onConflict: 'telegram_id,task_id' });
 
-      delete activeVerifications[id];
+      delete taskChecks[id];
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      btn.innerText = "Completed ✓";
+      btn.classList.remove('verify-mode');
       alert(`Verified! +${reward} XTAP credited to your Pool Wallet.`);
-      renderTasks();
     }
 
     function copyRefLink() {
