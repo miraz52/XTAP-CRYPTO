@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>XTAP ECOSYSTEM</title>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #38bdf8;
+      --accent: #6366f1;
+      --bg-dark: #09090b;
+      --card-bg: rgba(255, 255, 255, 0.05);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      background: radial-gradient(circle at top, #1e1b4b, var(--bg-dark));
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+    }
+    .user-tag {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .balance-box {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .balance-num {
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .currency-tag {
+      font-size: 20px;
+      color: var(--primary);
+    }
+    .view-section {
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .tap-btn-wrapper {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tap-btn {
+      width: 210px;
+      height: 210px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary), var(--accent), #1e1b4b);
+      border: 6px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 45px rgba(56, 189, 248, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.08s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tap-btn:active {
+      transform: scale(0.94);
+    }
+    .tap-symbol {
+      font-size: 68px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    .floating-text {
+      position: absolute;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--primary);
+      pointer-events: none;
+      animation: floatUp 0.6s ease-out forwards;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-60px); }
+    }
+    .energy-container {
+      width: 100%;
+      max-width: 340px;
+      margin-bottom: 15px;
+    }
+    .energy-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #1e293b;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width 0.2s ease;
+    }
+    .nav-tabs {
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      background: rgba(15, 23, 42, 0.85);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px;
+      gap: 6px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: var(--card-bg);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .panel {
+      display: none;
+      width: 100%;
+      max-width: 340px;
+      margin-top: 15px;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .panel.active {
+      display: flex;
+    }
+    .task-item {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .action-btn {
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Info Bar -->
+  <div class="top-bar">
+    <span class="user-tag" id="displayName">Connecting...</span>
+    <span style="color: #10b981; font-weight: 600;">● Online</span>
+  </div>
+
+  <!-- Balance Header -->
+  <div class="balance-box">
+    <div class="balance-num">
+      <span id="scoreText">0</span>
+      <span class="currency-tag">$XTAP</span>
+    </div>
+  </div>
+
+  <!-- TAP ENGINE -->
+  <div id="tapPanel" class="view-section">
+    <div class="tap-btn-wrapper">
+      <div class="tap-btn" id="tapButton">
+        <span class="tap-symbol">X</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS PANEL -->
+  <div id="taskPanel" class="panel">
+    <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Available Micro-Tasks</div>
+    <div id="taskList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+  </div>
+
+  <!-- REFERRAL PANEL -->
+  <div id="refPanel" class="panel" style="text-align: center;">
+    <div style="background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+      <h3 style="margin-bottom: 8px;">Invite Friends</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">Earn 10% commission on all your friend's tap points.</p>
+      <button class="action-btn" id="shareRefBtn" style="width: 100%; padding: 10px;">Copy Invite Link</button>
+    </div>
+  </div>
+
+  <!-- Energy Bar -->
+  <div class="energy-container">
+    <div class="energy-meta">
+      <span>⚡ Energy</span>
+      <span><strong id="energyText">1000</strong> / 1000</span>
+    </div>
+    <div class="bar-bg">
+      <div class="bar-fill" id="energyFill"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tap')">Tap</button>
+    <button class="tab-btn" onclick="switchTab('task')">Tasks</button>
+    <button class="tab-btn" onclick="switchTab('ref')">Friends</button>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // SUPABASE CONFIGURATION (OFFICIAL PROJECT INTEGRATION)
+    // -------------------------------------------------------------
+    const SUPABASE_URL = "https://grqnxhwzqfrxfnujaicn.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_FXFjr-BDyvkWkHAn0ykoiQ_X96I3Pq0";
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // -------------------------------------------------------------
+    // TELEGRAM USER IDENTIFICATION
+    // -------------------------------------------------------------
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const user = tg?.initDataUnsafe?.user || {
+      id: 99999999,
+      username: "demo_pilot",
+      first_name: "Pilot"
+    };
+
+    document.getElementById('displayName').innerText = `@${user.username || user.first_name}`;
+
+    let balance = 0;
+    let energy = 1000;
+    const maxEnergy = 1000;
+    let saveTimeout = null;
+
+    async function initUser() {
+      try {
+        let { data, error } = await client
+          .from('users')
+          .select('*')
+          .eq('telegram_id', user.id)
+          .single();
+
+        if (!data) {
+          const { data: newUser } = await client
+            .from('users')
+            .insert([{
+              telegram_id: user.id,
+              username: user.username,
+              first_name: user.first_name,
+              balance: 0,
+              energy: 1000
+            }])
+            .select()
+            .single();
+          data = newUser;
+        }
+
+        if (data) {
+          balance = data.balance || 0;
+          energy = data.energy || 1000;
+          updateUI();
+        }
+      } catch (err) {
+        console.error("DB Sync Error:", err);
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('scoreText').innerText = balance.toLocaleString();
+      document.getElementById('energyText').innerText = energy;
+      document.getElementById('energyFill').style.width = (energy / maxEnergy * 100) + '%';
+    }
+
+    const tapButton = document.getElementById('tapButton');
+    tapButton.addEventListener('pointerdown', (e) => {
+      if (energy <= 0) return;
+
+      balance += 1;
+      energy -= 1;
+      updateUI();
+
+      const text = document.createElement('div');
+      text.className = 'floating-text';
+      text.innerText = '+1';
+      text.style.left = `${e.clientX - 10}px`;
+      text.style.top = `${e.clientY - 25}px`;
+      document.body.appendChild(text);
+      setTimeout(() => text.remove(), 600);
+
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(syncToDB, 1500);
+    });
+
+    async function syncToDB() {
+      await client.from('users').update({
+        balance: balance,
+        energy: energy,
+        last_active: new Date()
+      }).eq('telegram_id', user.id);
+    }
+
+    setInterval(() => {
+      if (energy < maxEnergy) {
+        energy += 1;
+        updateUI();
+      }
+    }, 2000);
+
+    function switchTab(type) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tapPanel').style.display = 'none';
+      document.getElementById('taskPanel').classList.remove('active');
+      document.getElementById('refPanel').classList.remove('active');
+
+      if (type === 'tap') {
+        document.getElementById('tapPanel').style.display = 'flex';
+        event.target.classList.add('active');
+      } else if (type === 'task') {
+        document.getElementById('taskPanel').classList.add('active');
+        event.target.classList.add('active');
+        loadTasks();
+      } else if (type === 'ref') {
+        document.getElementById('refPanel').classList.add('active');
+        event.target.classList.add('active');
+      }
+    }
+
+    async function loadTasks() {
+      const { data: tasks } = await client.from('tasks').select('*');
+      const listEl = document.getElementById('taskList');
+      listEl.innerHTML = '';
+
+      if (tasks) {
+        tasks.forEach(task => {
+          const item = document.createElement('div');
+          item.className = 'task-item';
+          item.innerHTML = `
+            <div>
+              <div style="font-weight: 600; font-size: 14px;">${task.title}</div>
+              <div style="font-size: 12px; color: #38bdf8;">+${task.reward.toLocaleString()} $XTAP</div>
+            </div>
+            <button class="action-btn" onclick="completeTask(${task.id}, ${task.reward}, '${task.task_url}')">Start</button>
+          `;
+          listEl.appendChild(item);
+        });
+      }
+    }
+
+    async function completeTask(taskId, reward, url) {
+      window.open(url, '_blank');
+      balance += reward;
+      updateUI();
+      await syncToDB();
+      await client.from('user_tasks').insert([{ telegram_id: user.id, task_id: taskId }]);
+      alert("Task reward credited!");
+    }
+
+    document.getElementById('shareRefBtn').addEventListener('click', () => {
+      const refLink = `https://t.me/share/url?url=https://t.me/&text=Join%20XTAP%20Crypto%20Mining!`;
+      navigator.clipboard.writeText(refLink);
+      alert("Referral link copied!");
+    });
+
+    initUser();
+  </script>
+</body>
+</html>
