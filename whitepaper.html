@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XTAP Network - Official Whitepaper V1.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- html2canvas লাইব্রেরি ইমেজ কনভার্শনের জন্য -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none; /* টেক্সট সিলেক্ট ও কপি করা বন্ধ */
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #030712;
+      color: #e5e7eb;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 15px;
+    }
+
+    /* ফ্লোটিং ডাউনলোড বাটন */
+    .download-bar {
+      position: sticky;
+      top: 15px;
+      z-index: 999;
+      margin-bottom: 25px;
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #d4af37, #f59e0b);
+      color: #000;
+      border: none;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* অফিসিয়াল পেপার কন্টেইনার (A4 রেশিও গ্রাফিক পেজ) */
+    #paper-sheet {
+      width: 100%;
+      max-width: 820px;
+      background: radial-gradient(circle at top right, #1a1608 0%, #0d1117 40%, #080b10 100%);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 16px;
+      padding: 55px 45px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ব্যাকগ্রাউন্ড ওয়াটারমার্ক (নকল ঠেকাতে) */
+    #paper-sheet::before {
+      content: "XTAP OFFICIAL DOCUMENT";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-35deg);
+      font-size: 4rem;
+      font-family: 'Cinzel', serif;
+      font-weight: 900;
+      color: rgba(212, 175, 55, 0.03);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 6px 16px;
+      border: 1px solid rgba(212, 175, 55, 0.5);
+      border-radius: 30px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #d4af37;
+      background: rgba(212, 175, 55, 0.08);
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .paper-title {
+      font-family: 'Cinzel', serif;
+      font-size: 34px;
+      color: #ffffff;
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #ffffff 50%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .paper-subtitle {
+      font-size: 14px;
+      color: #d4af37;
+      font-weight: 600;
+      margin-bottom: 25px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 35px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .info-grid span {
+      color: #9ca3af;
+    }
+
+    .info-grid strong {
+      color: #ffffff;
+      display: block;
+      margin-top: 3px;
+    }
+
+    h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      color: #f59e0b;
+      margin: 30px 0 12px 0;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      padding-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    p {
+      font-size: 13.5px;
+      color: #94a3b8;
+      line-height: 1.7;
+      margin-bottom: 14px;
+      text-align: justify;
+    }
+
+    ul {
+      margin-left: 20px;
+      margin-bottom: 18px;
+      color: #94a3b8;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    li strong {
+      color: #f3f4f6;
+    }
+
+    /* টোকেনমিক্স প্রিমিয়াম টেবিল */
+    .token-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 12.5px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .token-table th {
+      background: rgba(212, 175, 55, 0.12);
+      color: #f59e0b;
+      padding: 12px;
+      text-align: left;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .token-table td {
+      padding: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+    }
+
+    /* কনভার্সন ফর্মুলা কার্ড */
+    .calc-card {
+      background: rgba(212, 175, 55, 0.05);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      margin: 22px 0;
+    }
+
+    .calc-formula {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      color: #f59e0b;
+      font-weight: 700;
+    }
+
+    /* রোডম্যাপ কার্ডস */
+    .roadmap-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .roadmap-item {
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid #f59e0b;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .roadmap-item h4 {
+      font-size: 13.5px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .roadmap-item p {
+      font-size: 12px;
+      margin: 0;
+      color: #64748b;
+    }
+
+    .footer-seal {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- এক-ক্লিকে ইমেজ বানানোর বাটন -->
+  <div class="download-bar">
+    <button class="btn-download" onclick="captureLockedPaper()">
+      📸 Download Whitepaper (Image-Locked)
+    </button>
+  </div>
+
+  <!-- সম্পূর্ণ সুরক্ষিত পেজ যা ছবিতে রূপান্তরিত হবে -->
+  <div id="paper-sheet">
+    <div class="badge-pill">OFFICIAL ARCHITECTURE SPECIFICATION</div>
+    <h1 class="paper-title">XTAP NETWORK</h1>
+    <div class="paper-subtitle">Decentralized Mobile Cloud-Mining Protocol on BNB Smart Chain</div>
+
+    <div class="info-grid">
+      <div><span>Ticker:</span><strong>$XTAP (BEP-20)</strong></div>
+      <div><span>Platform:</span><strong>xtap-crypto.vercel.app</strong></div>
+      <div><span>Official Hub:</span><strong>@Cryptotapxofficial</strong></div>
+    </div>
+
+    <h2>1. Protocol Summary & Architecture</h2>
+    <p>
+      XTAP Network is an enterprise-grade cloud-mining protocol built on the BNB Smart Chain (BEP-20). By replacing traditional hardware-intensive Proof-of-Work (PoW) with distributed <strong>Proof-of-Active-Mining (PoAM)</strong>, XTAP enables mobile devices to operate synchronized cloud rigs without device battery drainage, physical overheating, or carbon overhead.
+    </p>
+
+    <h2>2. Cloud Rig Mechanics & Hash Dynamics</h2>
+    <ul>
+      <li><strong>Automated Production Blocks:</strong> Rig cycles execute autonomously over 8-to-24 hour computational windows.</li>
+      <li><strong>Temporary Vault Claiming:</strong> Mined units accrue inside high-speed storage buffers; miners claim batches before capacity thresholds to ensure unhalted extraction.</li>
+      <li><strong>Hash Upgrades:</strong> Mined points are reinvested directly to scale processing frequency ($GH/s$) and rig capacity.</li>
+    </ul>
+
+    <h2>3. Tokenomics Framework</h2>
+    <p>Fixed supply cap: <strong>10,000,000,000 $XTAP</strong> (Deflationary, No mint functions).</p>
+    
+    <table class="token-table">
+      <thead>
+        <tr>
+          <th>Allocation Sector</th>
+          <th>Share (%)</th>
+          <th>Token Volume</th>
+          <th>Vesting Schedule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Community Mining Pool</strong></td>
+          <td>60%</td>
+          <td>6,000,000,000</td>
+          <td>100% unlocked at TGE snapshot</td>
+        </tr>
+        <tr>
+          <td><strong>Liquidity Pool (LP)</strong></td>
+          <td>15%</td>
+          <td>1,500,000,000</td>
+          <td>Permanently locked on PancakeSwap</td>
+        </tr>
+        <tr>
+          <td><strong>Ecosystem & Staking</strong></td>
+          <td>10%</td>
+          <td>1,000,000,000</td>
+          <td>Emitted linearly over 24 months</td>
+        </tr>
+        <tr>
+          <td><strong>Marketing & Tier-1 CEX</strong></td>
+          <td>8%</td>
+          <td>800,000,000</td>
+          <td>25% TGE, 6 months linear vesting</td>
+        </tr>
+        <tr>
+          <td><strong>Core Development</strong></td>
+          <td>7%</td>
+          <td>700,000,000</td>
+          <td>6-month cliff; 12 months linear</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. Snapshot & Conversion Formula</h2>
+    <div class="calc-card">
+      <div class="calc-formula">Claimable $XTAP = Mined Points ÷ 1,000</div>
+      <p style="font-size: 11.5px; color: #9ca3af; margin-top: 6px;">
+        Fixed Settlement Ratio: 1,000 In-Game Mined Units = 1 On-Chain $XTAP Token
+      </p>
+    </div>
+
+    <h2>5. Implementation Roadmap</h2>
+    <div class="roadmap-list">
+      <div class="roadmap-item">
+        <h4>Phase 01 • Cloud Infrastructure (Current)</h4>
+        <p>Vercel serverless integration, Supabase cloud sync, and mobile rig deployment.</p>
+      </div>
+      <div class="roadmap-item">
+        <h4>Phase 02 • Smart Contracts & Security</h4>
+        <p>Non-custodial BEP-20 binding, smart contract vulnerability audit, and CEX listings initialization.</p>
+      </div>
+      <div class="roadmap-item">
+        <h4>Phase 03 • Genesis TGE & Airdrop Portal</h4>
+        <p>Final snapshot lock, liquidity pool creation on PancakeSwap, and direct on-chain token claiming.</p>
+      </div>
+    </div>
+
+    <div class="footer-seal">
+      <span>IMMUTABLE PROTOCOL RECORD</span>
+      <span>AUTHENTICATED BY XTAP FOUNDATION</span>
+    </div>
+  </div>
+
+  <script>
+    function captureLockedPaper() {
+      const sheet = document.getElementById('paper-sheet');
+      
+      // হাই-রেজোলিউশন ছবি রেন্ডার করার কনফিগ
+      html2canvas(sheet, {
+        scale: 2.5, // আল্ট্রা এইচডি ক্ল্যারিটি
+        backgroundColor: '#030712',
+        useCORS: true
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'XTAP-Network-Whitepaper-V1.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>
