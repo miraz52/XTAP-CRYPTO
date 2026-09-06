@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -555,11 +555,6 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-
-    @keyframes pulseDot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
-    }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -823,9 +818,10 @@
 
     let poolBalance = parseFloat(localStorage.getItem(`xtap_bal_${user.id}`)) || 0;
     let isHumanVerified = false;
-    let bscAddress = "";
     
-    // ফার্মিং ও বুস্টার প্যারামিটার
+    // ওয়ালেট সরাসরি লোকাল স্টোরেজ থেকে পড়া যাতে কখনো ডিসকানেক্ট না হয়
+    let bscAddress = localStorage.getItem(`xtap_wallet_${user.id}`) || "";
+    
     const cycleDurationMs = 3 * 60 * 60 * 1000;
     const cycleBaseReward = 0.54;
     const BOOST_DURATION_MS = 2 * 60 * 60 * 1000; 
@@ -834,6 +830,9 @@
     let lastClaimTime = parseInt(localStorage.getItem(`xtap_last_claim_${user.id}`)) || 0;
     let lastBoostTime = parseInt(localStorage.getItem(`xtap_last_boost_${user.id}`)) || 0;
     let currentCaptcha = "";
+
+    // পেজ ওপেন হওয়ার সাথে সাথেই আগের সেভ করা ওয়ালেট দেখানো
+    updateWalletDisplay();
 
     // Web Audio Synth
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -920,6 +919,7 @@
             device_id: deviceId,
             user_ip: userIp,
             referred_by: referredBy,
+            wallet_address: bscAddress || null,
             last_claim_time: new Date()
           }]).select().single();
           data = created;
@@ -928,7 +928,15 @@
         } else if (data) {
           poolBalance = Math.max(parseFloat(data.pool_balance) || 0, poolBalance);
           isHumanVerified = data.is_verified || false;
-          bscAddress = data.wallet_address || "";
+          
+          // যদি ডাটাবেজে ওয়ালেট থাকে এবং লোকাল স্টোরেজে না থাকে, তবে লোকালে সেভ করা
+          if (data.wallet_address) {
+            bscAddress = data.wallet_address;
+            localStorage.setItem(`xtap_wallet_${user.id}`, bscAddress);
+          } else if (bscAddress) {
+            // যদি লোকালে থাকে ডাটাবেজে না থাকে, ডাটাবেজে পাঠিয়ে দেওয়া
+            client.from('users').update({ wallet_address: bscAddress }).eq('telegram_id', user.id);
+          }
           
           if (data.last_claim_time) {
             const dbTime = new Date(data.last_claim_time).getTime();
@@ -987,10 +995,18 @@
       }
 
       bscAddress = addr;
+      // ব্রাউজারে আজীবনের জন্য লক সেভ
+      localStorage.setItem(`xtap_wallet_${user.id}`, addr);
+      
       updateWalletDisplay();
       closeBscWalletModal();
 
-      await client.from('users').update({ wallet_address: addr }).eq('telegram_id', user.id);
+      try {
+        await client.from('users').update({ wallet_address: addr }).eq('telegram_id', user.id);
+      } catch (e) {
+        console.error("DB Error:", e);
+      }
+
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       alert("Settlement address bound successfully!");
     }
@@ -1102,11 +1118,9 @@
       await client.from('users').update({ is_verified: true }).eq('telegram_id', user.id);
     }
 
-    // প্রতি সেকেন্ডের লাইভ লুপ (ফার্মিং এবং বুস্ট কাউন্টডাউন আপডেট)
     setInterval(() => {
       const now = Date.now();
 
-      // ১. ফার্মিং টাইমার লজিক
       if (lastClaimTime) {
         const elapsed = now - lastClaimTime;
         const progress = Math.min(elapsed / cycleDurationMs, 1);
@@ -1138,7 +1152,6 @@
         }
       }
 
-      // ২. বুস্ট বাটন লাইভ সেকেন্ড কাউন্টডাউন
       const boostBtn = document.getElementById('btn-task-99');
       if (boostBtn) {
         const timeSinceBoost = now - lastBoostTime;
@@ -1166,7 +1179,6 @@
       }
     }, 1000);
 
-    // ম্যানুয়াল ক্লেইম লজিক + ক্রিপ্টো ক্লেইম সাউন্ড
     async function handleClaimOrStart() {
       const now = Date.now();
       const elapsed = now - lastClaimTime;
@@ -1218,12 +1230,10 @@
 
       const recordMap = {};
 
-      // ১. ডাটাবেজ থেকে সম্পন্ন টাস্ক নিয়ে আসা
       try {
         const { data: records } = await client.from('user_tasks').select('*').eq('telegram_id', user.id);
         (records || []).forEach(r => {
           recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
-          // লোকাল স্টোরেজেও ডাবল ব্যাকআপ লক করে দেওয়া
           if (r.task_id !== 99) {
             localStorage.setItem(`xtap_task_done_${user.id}_${r.task_id}`, 'true');
           }
@@ -1232,7 +1242,6 @@
         console.error("Task fetch error:", e);
       }
 
-      // ২. লোকাল স্টোরেজ থেকে হার্ডওয়্যার লক চেক (জিরো এক্সপ্লয়েট)
       officialTasks.forEach(t => {
         if (t.type === 'social') {
           if (localStorage.getItem(`xtap_task_done_${user.id}_${t.id}`) === 'true') {
@@ -1257,7 +1266,7 @@
         if (t.type === 'social') {
           if (lastDone) {
             isDone = true;
-            btnText = "Claimed ✓"; // আজীবনের জন্য ক্লেইমড
+            btnText = "Claimed ✓";
           }
         } else if (t.type === 'booster') {
           const timeSinceBoost = now - lastBoostTime;
@@ -1306,7 +1315,6 @@
         return;
       }
 
-      // কঠোর অ্যান্টি-রিপ্লে গার্ড: একবার সম্পন্ন হলে আর কোনোভাবেই ক্লিক হতে দেওয়া যাবে না
       if (localStorage.getItem(`xtap_task_done_${user.id}_${id}`) === 'true') {
         alert("Operation already cleared and rewarded.");
         return;
@@ -1363,7 +1371,6 @@
     }
 
     async function completeTask(id, reward) {
-      // ডাবল চেকিং: অলরেডি ক্লেইমড হলে কোড থামিয়ে দেওয়া
       if (localStorage.getItem(`xtap_task_done_${user.id}_${id}`) === 'true') {
         return;
       }
@@ -1372,7 +1379,6 @@
       btn.innerText = "Claiming...";
       btn.disabled = true;
 
-      // সাথে সাথে লোকাল লক দেওয়া যাতে এক সেকেন্ডের ভেতর মাল্টি-ক্লিক না করা যায়
       localStorage.setItem(`xtap_task_done_${user.id}_${id}`, 'true');
 
       playCoinChimeSound();
