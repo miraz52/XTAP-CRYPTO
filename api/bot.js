@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const SUPABASE_URL = 'https://gcqiahwqzfcxfnujzicn.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_FXfjr_BDysskhmnOyhsiQ_ENGIPqQ';
 
-  // ১. /start কমান্ড হ্যান্ডলিং
+  // 1. /start command handling
   if (message && message.text && message.text.startsWith('/start')) {
     const chatId = message.chat.id;
     const textParts = message.text.split(' ');
@@ -54,30 +54,30 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // ২. ইউজার ভিডিও পাঠালে তা রিসিভ করে অ্যাডমিনের কাছে পাঠানো
+  // 2. User sends video -> forward to Admin
   if (message && (message.video || message.video_note)) {
     const userId = message.from.id;
     const userName = message.from.username ? `@${message.from.username}` : message.from.first_name;
     const videoFileId = (message.video && message.video.file_id) || (message.video_note && message.video_note.file_id);
 
-    // ইউজারকে কনফার্মেশন মেসেজ
+    // Confirmation message to user in English
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: userId,
-        text: '✅ আপনার ভিডিওটি জমা হয়েছে! অ্যাডমিন ভেরিফাই করলে আপনার একাউন্টে ৩০০ $XTAP জমা হবে।'
+        text: '✅ Your video has been submitted! Upon admin verification, 300 $XTAP will be credited to your account.'
       })
     });
 
-    // অ্যাডমিনকে ভিডিও ও Approve/Reject বাটনসহ ফরোয়ার্ড
+    // Forward video to admin with Approve/Reject buttons
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: ADMIN_ID,
         video: videoFileId,
-        caption: `📹 নতুন ভিডিও রিভিউয়ের জন্য এসেছে!\n\n👤 ইউজার: ${userName}\n🆔 আইডি: <code>${userId}</code>`,
+        caption: `📹 <b>New Video Submitted for Review!</b>\n\n👤 <b>User:</b> ${userName}\n🆔 <b>User ID:</b> <code>${userId}</code>`,
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // ৩. অ্যাডমিন Approve বা Reject বাটনে চাপ দিলে
+  // 3. Admin actions (Approve / Reject)
   if (callback_query) {
     const adminChatId = callback_query.from.id;
     const data = callback_query.data;
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
     if (data.startsWith('approve_')) {
       const targetUserId = data.replace('approve_', '');
 
-      // ইউজারের ব্যালেন্স ৩০০ $XTAP বাড়িয়ে দেওয়া
+      // Increment balance in Supabase
       try {
         await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_balance`, {
           method: 'POST',
@@ -121,47 +121,49 @@ export default async function handler(req, res) {
         console.error('Balance update error:', e);
       }
 
-      // ইউজারকে মেসেজ
+      // Notification to user in English
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetUserId,
-          text: '🎉 অভিনন্দন! আপনার ভিডিও সফলভাবে অ্যাপ্রুভ হয়েছে এবং ৩০০ $XTAP জমা হয়েছে!'
+          text: '🎉 Congratulations! Your video has been approved and 300 $XTAP has been credited to your balance!'
         })
       });
 
-      // অ্যাডমিন চ্যাটে মেসেজ আপডেট
+      // Update caption on admin screen in English
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageCaption`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: adminChatId,
           message_id: messageId,
-          caption: `✅ ভিডিও অ্যাপ্রুভ করা হয়েছে এবং ইউজারকে ৩০০ $XTAP দেওয়া হয়েছে।`
+          caption: `✅ Video approved! 300 $XTAP credited to User ID: <code>${targetUserId}</code>`,
+          parse_mode: 'HTML'
         })
       });
     } else if (data.startsWith('reject_')) {
       const targetUserId = data.replace('reject_', '');
 
-      // ইউজারকে মেসেজ
+      // Notification to user in English
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetUserId,
-          text: '❌ দুঃখিত, আপনার সাবমিট করা ভিডিওটি বাতিল (Reject) করা হয়েছে।'
+          text: '❌ Sorry, your submitted video has been rejected by the admin.'
         })
       });
 
-      // অ্যাডমিন চ্যাটে মেসেজ আপডেট
+      // Update caption on admin screen in English
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageCaption`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: adminChatId,
           message_id: messageId,
-          caption: `❌ ভিডিওটি রিজেক্ট করা হয়েছে।`
+          caption: `❌ Video submission was rejected.`,
+          parse_mode: 'HTML'
         })
       });
     }
