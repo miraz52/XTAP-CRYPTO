@@ -106,19 +106,33 @@ export default async function handler(req, res) {
     if (data.startsWith('approve_')) {
       const targetUserId = data.replace('approve_', '');
 
-      // Increment balance in Supabase
+      // সরাসরি ইউজারের ডাটা ফেচ করে ব্যালেন্স +300 আপডেট করা
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_balance`, {
-          method: 'POST',
+        const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}&select=*`, {
           headers: {
             apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ user_id: targetUserId, amount: 300 })
+            Authorization: `Bearer ${SUPABASE_KEY}`
+          }
         });
+        const users = await userRes.json();
+        
+        if (users && users.length > 0) {
+          const currentBalance = Number(users[0].balance || 0);
+          const newBalance = currentBalance + 300;
+
+          await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}`, {
+            method: 'PATCH',
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal'
+            },
+            body: JSON.stringify({ balance: newBalance })
+          });
+        }
       } catch (e) {
-        console.error('Balance update error:', e);
+        console.error('Direct balance update error:', e);
       }
 
       // Notification to user in English
@@ -145,7 +159,6 @@ export default async function handler(req, res) {
     } else if (data.startsWith('reject_')) {
       const targetUserId = data.replace('reject_', '');
 
-      // Notification to user in English
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,7 +168,6 @@ export default async function handler(req, res) {
         })
       });
 
-      // Update caption on admin screen in English
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageCaption`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
