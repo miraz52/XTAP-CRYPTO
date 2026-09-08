@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -723,7 +723,7 @@
           <div class="meta-icon-badge">📦</div>
           <div class="meta-text-box">
             <h4>TGE Airdrop Distribution</h4>
-            <p id="airdropEligibilityLabel">Bind BSC wallet to qualify</p>
+            <p id="airdropEligibilityLabel">Complete Human Proof first</p>
           </div>
         </div>
         <div class="status-tag locked" id="airdropStatusTag">Locked (Pre-TGE)</div>
@@ -740,23 +740,6 @@
       <div class="modal-actions-row">
         <button style="background: #1f2937; color: #fff;" onclick="closeBscWalletModal()">Cancel</button>
         <button style="background: var(--accent-gradient); color: #000;" onclick="saveBscWallet()">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CAPTCHA MODAL -->
-  <div class="cyber-modal-overlay" id="humanModal">
-    <div class="cyber-modal-window">
-      <h3>Proof of Humanity</h3>
-      <p>Solve the security matrix to prevent Sybil detection.</p>
-      <div style="background:#050507; border-radius:14px; padding:12px; margin-bottom:14px; border:1px dashed rgba(255,255,255,0.15);">
-        <canvas id="captchaCanvas" width="200" height="65"></canvas>
-        <div style="color:var(--gold); font-size:11px; font-weight:800; margin-top:6px; cursor:pointer;" onclick="generateCaptcha()">🔄 Refresh Code</div>
-      </div>
-      <input type="text" id="captchaInputField" class="cyber-input" placeholder="ENTER CODE" maxlength="6" />
-      <div class="modal-actions-row">
-        <button style="background: #1f2937; color: #fff;" onclick="closeHumanChallenge()">Cancel</button>
-        <button style="background: #10b981; color: #000;" onclick="validateHumanChallenge()">Verify</button>
       </div>
     </div>
   </div>
@@ -819,7 +802,6 @@
     let poolBalance = parseFloat(localStorage.getItem(`xtap_bal_${user.id}`)) || 0;
     let isHumanVerified = false;
     
-    // ওয়ালেট সরাসরি লোকাল স্টোরেজ থেকে পড়া যাতে কখনো ডিসকানেক্ট না হয়
     let bscAddress = localStorage.getItem(`xtap_wallet_${user.id}`) || "";
     
     const cycleDurationMs = 3 * 60 * 60 * 1000;
@@ -829,9 +811,7 @@
     
     let lastClaimTime = parseInt(localStorage.getItem(`xtap_last_claim_${user.id}`)) || 0;
     let lastBoostTime = parseInt(localStorage.getItem(`xtap_last_boost_${user.id}`)) || 0;
-    let currentCaptcha = "";
 
-    // পেজ ওপেন হওয়ার সাথে সাথেই আগের সেভ করা ওয়ালেট দেখানো
     updateWalletDisplay();
 
     // Web Audio Synth
@@ -929,12 +909,10 @@
           poolBalance = Math.max(parseFloat(data.pool_balance) || 0, poolBalance);
           isHumanVerified = data.is_verified || false;
           
-          // যদি ডাটাবেজে ওয়ালেট থাকে এবং লোকাল স্টোরেজে না থাকে, তবে লোকালে সেভ করা
           if (data.wallet_address) {
             bscAddress = data.wallet_address;
             localStorage.setItem(`xtap_wallet_${user.id}`, bscAddress);
           } else if (bscAddress) {
-            // যদি লোকালে থাকে ডাটাবেজে না থাকে, ডাটাবেজে পাঠিয়ে দেওয়া
             client.from('users').update({ wallet_address: bscAddress }).eq('telegram_id', user.id);
           }
           
@@ -947,6 +925,14 @@
           }
           await client.from('users').update({ user_ip: userIp, device_id: deviceId, pool_balance: poolBalance }).eq('telegram_id', user.id);
         }
+
+        // user_tasks টেবিলেও যাচাই করা (Task ID: 100)
+        try {
+          const { data: taskData } = await client.from('user_tasks').select('*').eq('telegram_id', user.id).eq('task_id', 100).maybeSingle();
+          if (taskData) {
+            isHumanVerified = true;
+          }
+        } catch (e) {}
 
         if (!lastClaimTime) {
           lastClaimTime = Date.now();
@@ -995,7 +981,6 @@
       }
 
       bscAddress = addr;
-      // ব্রাউজারে আজীবনের জন্য লক সেভ
       localStorage.setItem(`xtap_wallet_${user.id}`, addr);
       
       updateWalletDisplay();
@@ -1030,22 +1015,12 @@
         btn.disabled = true;
         desc.innerText = "Identity Authenticated";
         icon.innerText = "✅";
-          } else {
-      btn.innerText = "Verify";
-      btn.classList.add('active-highlight');
-      btn.disabled = false;
-      btn.onclick = () => {
-        const link = 'https://t.me/XTAPCRYPTOBOT?start=verify';
-if (window.Telegram?.WebApp?.openTelegramLink) {
-  window.Telegram.WebApp.openTelegramLink(link);
-} else {
-  window.open(link, '_blank');
-}
-        }
-      };
-      desc.innerText = "Anti-sybil verification required";
-      icon.innerText = "🛡️";
-
+      } else {
+        btn.innerText = "Verify";
+        btn.classList.add('active-highlight');
+        btn.disabled = false;
+        desc.innerText = "Anti-sybil verification required";
+        icon.innerText = "🛡️";
       }
       updateAirdropStatusUI();
     }
@@ -1057,79 +1032,33 @@ if (window.Telegram?.WebApp?.openTelegramLink) {
       if (bscAddress && isHumanVerified) {
         label.innerText = "Eligible for Mainnet Drop";
         tag.innerText = "Auto Airdrop";
+        tag.className = "status-tag";
         tag.style.color = "var(--neon-green)";
         tag.style.borderColor = "rgba(16, 185, 129, 0.4)";
       } else if (!isHumanVerified) {
         label.innerText = "Complete Human Proof first";
         tag.innerText = "Verify Required";
+        tag.className = "status-tag locked";
         tag.style.color = "#ef4444";
         tag.style.borderColor = "rgba(239, 68, 68, 0.4)";
       } else {
         label.innerText = "Bind BSC wallet to qualify";
         tag.innerText = "Locked (Pre-TGE)";
+        tag.className = "status-tag locked";
         tag.style.color = "var(--gold)";
         tag.style.borderColor = "rgba(245, 158, 11, 0.3)";
       }
     }
 
-    function generateCaptcha() {
-      const canvas = document.getElementById('captchaCanvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      currentCaptcha = "";
-      for (let i = 0; i < 5; i++) {
-        currentCaptcha += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-
-      for (let i = 0; i < 7; i++) {
-        ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.35)`;
-        ctx.beginPath();
-        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.stroke();
-      }
-
-      for (let i = 0; i < currentCaptcha.length; i++) {
-        ctx.save();
-        ctx.font = "bold 26px sans-serif";
-        ctx.fillStyle = i % 2 === 0 ? "#f59e0b" : "#10b981";
-        ctx.translate(25 + i * 32, 42);
-        ctx.rotate((Math.random() - 0.5) * 0.4);
-        ctx.fillText(currentCaptcha[i], 0, 0);
-        ctx.restore();
-      }
-      document.getElementById('captchaInputField').value = "";
-    }
-
+    // সরাসরি টেলিগ্রাম বটে ভেরিফিকেশনের জন্য পাঠানো
     function openHumanChallenge() {
-  if (isHumanVerified) return;
-  const botUrl = 'https://t.me/XTAPCRYPTOBOT?start=verify';
-  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-    window.Telegram.WebApp.openTelegramLink(botUrl);
-  } else {
-    window.open(botUrl, '_blank');
-  }
-    }
-    function closeHumanChallenge() {
-      document.getElementById('humanModal').style.display = 'none';
-    }
-
-    async function validateHumanChallenge() {
-      const input = document.getElementById('captchaInputField').value.trim().toUpperCase();
-      if (input !== currentCaptcha) {
-        alert("Verification code mismatch. Try again.");
-        generateCaptcha();
-        return;
+      if (isHumanVerified) return;
+      const botUrl = "https://t.me/XTAPCRYPTOBOT?start=verify";
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(botUrl);
+      } else {
+        window.location.href = botUrl;
       }
-
-      isHumanVerified = true;
-      closeHumanChallenge();
-      updateKycUI();
-      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-      alert("Human authentication successful.");
-      await client.from('users').update({ is_verified: true }).eq('telegram_id', user.id);
     }
 
     setInterval(() => {
