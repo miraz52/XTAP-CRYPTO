@@ -15,13 +15,14 @@ export default async function handler(req, res) {
     'Content-Type': 'application/json'
   };
 
-  // 1. /start Command
+  // ১. /start কমান্ড হ্যান্ডেল করা
   if (message && message.text && message.text.startsWith('/start')) {
     const chatId = message.chat.id;
     const fullText = message.text.trim();
 
+    // মিনি-অ্যাপ থেকে যখন ইউজার ভেরিফিকেশনে আসবে (/start verify)
     if (fullText.includes('verify')) {
-      const verifyMessage = 
+      const verifyPrompt = 
         `🛡️ <b>XTAP PROTOCOL: HUMAN PROOF VERIFICATION</b>\n\n` +
         `To prevent Sybil attacks and qualify for the upcoming Mainnet TGE distribution, please submit your biometric proof of humanity.\n\n` +
         `<b>📋 Submission Instructions:</b>\n` +
@@ -37,13 +38,14 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: verifyMessage,
+          text: verifyPrompt,
           parse_mode: 'HTML'
         })
       });
       return res.status(200).send('OK');
     }
 
+    // রেফারেল এবং সাধারণ /start
     const textParts = fullText.split(' ');
     const param = textParts.length > 1 ? textParts[1] : null;
 
@@ -55,7 +57,7 @@ export default async function handler(req, res) {
           body: JSON.stringify({ referrer_id: String(param), referred_id: String(chatId) })
         });
       } catch (err) {
-        console.error('Referral error:', err);
+        console.error('Referral log error:', err);
       }
     }
 
@@ -84,13 +86,14 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // 2. Video Processing
+  // ২. ভিডিও রিসিভ ও অ্যাডমিনের কাছে ফরোয়ার্ড
   const isVideo = message && (message.video || message.video_note || (message.document && message.document.mime_type && message.document.mime_type.startsWith('video/')));
 
   if (isVideo) {
     const userId = message.from.id;
     const userName = message.from.username ? `@${message.from.username}` : (message.from.first_name || 'Pilot');
 
+    // ব্যবহারকারীকে কনফার্মেশন পাঠানো
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -101,6 +104,7 @@ export default async function handler(req, res) {
       })
     });
 
+    // অ্যাডমিনের কাছে ভিডিও ফরোয়ার্ড
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/forwardMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -111,6 +115,7 @@ export default async function handler(req, res) {
       })
     });
 
+    // অ্যাডমিনের কাছে অ্যাকশন প্যানেল পাঠানো
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -132,7 +137,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // 3. Callback Handling
+  // ৩. অ্যাডমিন অ্যাপ্রুভ বা রিজেক্ট করলে হ্যান্ডেল করা
   if (callback_query) {
     const adminChatId = callback_query.from.id;
     const data = callback_query.data;
@@ -144,38 +149,47 @@ export default async function handler(req, res) {
 
     if (data.startsWith('approve_')) {
       const targetUserId = data.replace('approve_', '').trim();
+      const numUserId = Number(targetUserId);
       const nowIso = new Date().toISOString();
 
       try {
-        // ব্যালেন্স ফেচ
-        const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}&select=*`, {
+        // ধাপ ১: ইউজারের বর্তমান ব্যালেন্স আনা
+        let currentBal = 0;
+        const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${numUserId}&select=*`, {
           headers: supabaseHeaders
         });
-        const users = await userRes.json();
 
-        let currentBal = 0;
-        if (users && users.length > 0) {
-          currentBal = parseFloat(users[0].pool_balance) || 0;
+        if (userRes.ok) {
+          const users = await userRes.json();
+          if (Array.isArray(users) && users.length > 0) {
+            currentBal = parseFloat(users[0].pool_balance) || 0;
+          }
         }
 
         const newBal = currentBal + 300;
 
-        // users টেবিল আপডেট
-        await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}`, {
+        // ধাপ ২: users টেবিলে ব্যালেন্স ও স্ট্যাটাস আপডেট করা
+        await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${numUserId}`, {
           method: 'PATCH',
-          headers: { ...supabaseHeaders, Prefer: 'return=minimal' },
+          headers: {
+            ...supabaseHeaders,
+            'Prefer': 'return=representation'
+          },
           body: JSON.stringify({
             is_verified: true,
             pool_balance: newBal
           })
         });
 
-        // user_tasks টেবিলে Task ID 100 এন্ট্রি
+        // ধাপ ৩: user_tasks টেবিলে Task ID 100 সেভ করা
         await fetch(`${SUPABASE_URL}/rest/v1/user_tasks`, {
           method: 'POST',
-          headers: { ...supabaseHeaders, Prefer: 'resolution=merge-duplicates' },
+          headers: {
+            ...supabaseHeaders,
+            'Prefer': 'resolution=merge-duplicates'
+          },
           body: JSON.stringify({
-            telegram_id: Number(targetUserId),
+            telegram_id: numUserId,
             task_id: 100,
             completed_at: nowIso,
             last_completed_at: nowIso
@@ -183,9 +197,10 @@ export default async function handler(req, res) {
         });
 
       } catch (err) {
-        console.error('Database sync error:', err);
+        console.error('Database update error:', err);
       }
 
+      // ব্যবহারকারীকে নোটিফিকেশন পাঠানো
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -196,6 +211,7 @@ export default async function handler(req, res) {
         })
       });
 
+      // অ্যাডমিন মেসেজ আপডেট করা
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,6 +222,7 @@ export default async function handler(req, res) {
           parse_mode: 'HTML'
         })
       });
+
     } else if (data.startsWith('reject_')) {
       const targetUserId = data.replace('reject_', '').trim();
 
