@@ -926,7 +926,7 @@
           await client.from('users').update({ user_ip: userIp, device_id: deviceId, pool_balance: poolBalance }).eq('telegram_id', user.id);
         }
 
-        // user_tasks টেবিলেও যাচাই করা (Task ID: 100)
+        // user_tasks টেবিলে Task ID: 100 চেক করা (Human Proof)
         try {
           const { data: taskData } = await client.from('user_tasks').select('*').eq('telegram_id', user.id).eq('task_id', 100).maybeSingle();
           if (taskData) {
@@ -1019,6 +1019,8 @@
         btn.innerText = "Verify";
         btn.classList.add('active-highlight');
         btn.disabled = false;
+        btn.style.background = "";
+        btn.style.color = "";
         desc.innerText = "Anti-sybil verification required";
         icon.innerText = "🛡️";
       }
@@ -1050,37 +1052,18 @@
       }
     }
 
-    // সরাসরি টেলিগ্রাম বটে ভিডিও ভেরিফিকেশনে নিয়ে যাওয়া
+    // সরাসরি বটে ভিডিও ভেরিফিকেশনে পাঠানো
     function openHumanChallenge() {
       if (isHumanVerified) return;
       const verifyLink = "https://t.me/XTAPCRYPTOBOT?start=verify";
       
       const tgApp = window.Telegram?.WebApp;
-      if (tgApp) {
-        if (typeof tgApp.openTelegramLink === 'function') {
-          tgApp.openTelegramLink(verifyLink);
-        }
-        // মিনি-অ্যাপ ফ্রেম ক্লোজ করে বটের আসল চ্যাটে নিয়ে আসা
-        if (typeof tgApp.close === 'function') {
-          tgApp.close();
-        }
+      if (tgApp && typeof tgApp.openTelegramLink === 'function') {
+        tgApp.openTelegramLink(verifyLink);
       } else {
         window.location.href = verifyLink;
       }
     }
-
-    // মোবাইল স্পর্শের সাথে সাথে বট ট্রিগার নিশ্চিত করা
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('kycActionBtn');
-      if (btn) {
-        btn.addEventListener('touchend', (e) => {
-          if (!isHumanVerified) {
-            e.preventDefault();
-            openHumanChallenge();
-          }
-        });
-      }
-    });
 
     setInterval(() => {
       const now = Date.now();
