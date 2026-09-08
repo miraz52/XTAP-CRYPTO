@@ -1030,12 +1030,21 @@
         btn.disabled = true;
         desc.innerText = "Identity Authenticated";
         icon.innerText = "✅";
-      } else {
-        btn.innerText = "Verify";
-        btn.classList.add('active-highlight');
-        btn.disabled = false;
-        desc.innerText = "Anti-sybil verification required";
-        icon.innerText = "🛡️";
+          } else {
+      btn.innerText = "Verify";
+      btn.classList.add('active-highlight');
+      btn.disabled = false;
+      btn.onclick = () => {
+        const link = 'https://t.me/XTAPCRYPTOBOT?start=verify';
+        if (window.Telegram?.WebApp?.openTelegramLink) {
+          window.Telegram.WebApp.openTelegramLink(link);
+        } else {
+          window.open(link, '_blank');
+        }
+      };
+      desc.innerText = "Anti-sybil verification required";
+      icon.innerText = "🛡️";
+
       }
       updateAirdropStatusUI();
     }
