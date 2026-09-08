@@ -801,7 +801,6 @@
 
     let poolBalance = parseFloat(localStorage.getItem(`xtap_bal_${user.id}`)) || 0;
     let isHumanVerified = false;
-    
     let bscAddress = localStorage.getItem(`xtap_wallet_${user.id}`) || "";
     
     const cycleDurationMs = 3 * 60 * 60 * 1000;
@@ -818,18 +817,14 @@
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playCoinChimeSound() {
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
       playTone(987.77, 0.08, 'triangle', () => {
         playTone(1318.51, 0.35, 'sine');
       });
     }
 
     function playTapHapticSound() {
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
       playTone(450, 0.04, 'sine');
     }
 
@@ -854,9 +849,7 @@
       const core = document.getElementById('tokenCoreStage');
       if (core) {
         core.style.transform = 'scale(0.92) translateZ(-25px)';
-        setTimeout(() => {
-          core.style.transform = '';
-        }, 120);
+        setTimeout(() => { core.style.transform = ''; }, 120);
       }
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
     }
@@ -885,7 +878,12 @@
           userIp = ipData.ip;
         } catch(e) {}
 
-        let { data, error } = await client.from('users').select('*').eq('telegram_id', user.id).maybeSingle();
+        // ডাটাবেস থেকে ইউজার চেক (নম্বর এবং স্ট্রিং দুটোতেই)
+        let { data, error } = await client
+          .from('users')
+          .select('*')
+          .or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`)
+          .maybeSingle();
         
         if (!data && !error) {
           const { data: created } = await client.from('users').insert([{
@@ -907,13 +905,13 @@
           localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
         } else if (data) {
           poolBalance = Math.max(parseFloat(data.pool_balance) || 0, poolBalance);
-          isHumanVerified = data.is_verified || false;
+          isHumanVerified = (data.is_verified === true || data.is_verified === 'true');
           
           if (data.wallet_address) {
             bscAddress = data.wallet_address;
             localStorage.setItem(`xtap_wallet_${user.id}`, bscAddress);
           } else if (bscAddress) {
-            client.from('users').update({ wallet_address: bscAddress }).eq('telegram_id', user.id);
+            client.from('users').update({ wallet_address: bscAddress }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
           }
           
           if (data.last_claim_time) {
@@ -923,12 +921,17 @@
               localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
             }
           }
-          await client.from('users').update({ user_ip: userIp, device_id: deviceId, pool_balance: poolBalance }).eq('telegram_id', user.id);
+          await client.from('users').update({ user_ip: userIp, device_id: deviceId, pool_balance: poolBalance }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
         }
 
-        // user_tasks টেবিলে Task ID: 100 ভেরিফিকেশন চেক
+        // user_tasks টেবিলে Task ID 100 চেক
         try {
-          const { data: taskData } = await client.from('user_tasks').select('*').eq('telegram_id', user.id).eq('task_id', 100).maybeSingle();
+          const { data: taskData } = await client
+            .from('user_tasks')
+            .select('*')
+            .or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`)
+            .eq('task_id', 100)
+            .maybeSingle();
           if (taskData) {
             isHumanVerified = true;
           }
@@ -948,11 +951,11 @@
         const { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
         document.getElementById('refCountText').innerText = `${count || 0} Pilots`;
 
-        // রিয়েল-টাইম অটোমেটিক ভেরিফিকেশন ডিটেকশন
+        // রিয়েল-টাইম ডাটাবেস পরিবর্তন ডিটেকশন
         client.channel('public:users')
-          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `telegram_id=eq.${user.id}` }, payload => {
-            if (payload.new && payload.new.is_verified) {
-              isHumanVerified = true;
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, payload => {
+            if (payload.new && (payload.new.telegram_id == user.id)) {
+              if (payload.new.is_verified) isHumanVerified = true;
               poolBalance = parseFloat(payload.new.pool_balance) || poolBalance;
               updateBalancesUI();
               updateKycUI();
@@ -1001,7 +1004,7 @@
       closeBscWalletModal();
 
       try {
-        await client.from('users').update({ wallet_address: addr }).eq('telegram_id', user.id);
+        await client.from('users').update({ wallet_address: addr }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
       } catch (e) {
         console.error("DB Error:", e);
       }
@@ -1066,7 +1069,6 @@
       }
     }
 
-    // ১০০% গ্যারান্টেড টেলিগ্রাম বট রিডাইরেক্ট হ্যান্ডলার
     function openHumanChallenge() {
       if (isHumanVerified) return;
 
@@ -1080,7 +1082,6 @@
         } catch(err) {}
       }
 
-      // সেকেন্ডারি ফলব্যাক (যদি টেলিগ্রাম ওয়েবভিউ ব্লক করে)
       try {
         window.location.href = tgScheme;
       } catch(e) {
@@ -1174,7 +1175,7 @@
       await client.from('users').update({ 
         pool_balance: poolBalance,
         last_claim_time: new Date(lastClaimTime).toISOString()
-      }).eq('telegram_id', user.id);
+      }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
     }
 
     function switchDockNav(tabName, el) {
@@ -1201,7 +1202,7 @@
       const recordMap = {};
 
       try {
-        const { data: records } = await client.from('user_tasks').select('*').eq('telegram_id', user.id);
+        const { data: records } = await client.from('user_tasks').select('*').or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
         (records || []).forEach(r => {
           recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
           if (r.task_id !== 99) {
@@ -1356,7 +1357,7 @@
       updateBalancesUI();
 
       try {
-        await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
+        await client.from('users').update({ pool_balance: poolBalance }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
         await client.from('user_tasks').upsert({ 
           telegram_id: user.id, 
           task_id: id,
