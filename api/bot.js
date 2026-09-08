@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(200).send('XTAP Bot Backend is Online');
@@ -11,14 +9,17 @@ export default async function handler(req, res) {
   const SUPABASE_URL = 'https://grqnxhwzqfrxfnujaicn.supabase.co';
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'sb_publishable_FXFjr-BDyvkWkHAn0ykoiQ_X96I3Pq0';
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabaseHeaders = {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json'
+  };
 
-  // 1. /start Command Handling
+  // 1. /start Command
   if (message && message.text && message.text.startsWith('/start')) {
     const chatId = message.chat.id;
     const fullText = message.text.trim();
 
-    // Human Proof Verification Request
     if (fullText.includes('verify')) {
       const verifyMessage = 
         `🛡️ <b>XTAP PROTOCOL: HUMAN PROOF VERIFICATION</b>\n\n` +
@@ -43,13 +44,16 @@ export default async function handler(req, res) {
       return res.status(200).send('OK');
     }
 
-    // Standard /start Referral
     const textParts = fullText.split(' ');
     const param = textParts.length > 1 ? textParts[1] : null;
 
     if (param && String(param) !== String(chatId)) {
       try {
-        await supabase.from('referrals').insert([{ referrer_id: String(param), referred_id: String(chatId) }]);
+        await fetch(`${SUPABASE_URL}/rest/v1/referrals`, {
+          method: 'POST',
+          headers: { ...supabaseHeaders, Prefer: 'return=minimal' },
+          body: JSON.stringify({ referrer_id: String(param), referred_id: String(chatId) })
+        });
       } catch (err) {
         console.error('Referral error:', err);
       }
@@ -80,7 +84,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // 2. Video Receipt & Forwarding to Admin
+  // 2. Video Processing
   const isVideo = message && (message.video || message.video_note || (message.document && message.document.mime_type && message.document.mime_type.startsWith('video/')));
 
   if (isVideo) {
@@ -128,7 +132,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // 3. Admin Decision Handling
+  // 3. Callback Handling
   if (callback_query) {
     const adminChatId = callback_query.from.id;
     const data = callback_query.data;
@@ -140,15 +144,14 @@ export default async function handler(req, res) {
 
     if (data.startsWith('approve_')) {
       const targetUserId = data.replace('approve_', '').trim();
-      const numUserId = Number(targetUserId);
       const nowIso = new Date().toISOString();
 
       try {
-        // ১. users টেবিলে চেক করা (String এবং Number উভয় ফিল্টারে)
-        const { data: users } = await supabase
-          .from('users')
-          .select('*')
-          .or(`telegram_id.eq.${numUserId},telegram_id.eq."${targetUserId}"`);
+        // ব্যালেন্স ফেচ
+        const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}&select=*`, {
+          headers: supabaseHeaders
+        });
+        const users = await userRes.json();
 
         let currentBal = 0;
         if (users && users.length > 0) {
@@ -157,21 +160,27 @@ export default async function handler(req, res) {
 
         const newBal = currentBal + 300;
 
-        // ২. users আপডেট
-        await supabase
-          .from('users')
-          .update({ is_verified: true, pool_balance: newBal })
-          .or(`telegram_id.eq.${numUserId},telegram_id.eq."${targetUserId}"`);
+        // users টেবিল আপডেট
+        await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}`, {
+          method: 'PATCH',
+          headers: { ...supabaseHeaders, Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            is_verified: true,
+            pool_balance: newBal
+          })
+        });
 
-        // ৩. user_tasks টেবিলে Task ID 100 সংরক্ষণ
-        await supabase
-          .from('user_tasks')
-          .upsert({
-            telegram_id: numUserId,
+        // user_tasks টেবিলে Task ID 100 এন্ট্রি
+        await fetch(`${SUPABASE_URL}/rest/v1/user_tasks`, {
+          method: 'POST',
+          headers: { ...supabaseHeaders, Prefer: 'resolution=merge-duplicates' },
+          body: JSON.stringify({
+            telegram_id: Number(targetUserId),
             task_id: 100,
             completed_at: nowIso,
             last_completed_at: nowIso
-          }, { onConflict: 'telegram_id,task_id' });
+          })
+        });
 
       } catch (err) {
         console.error('Database sync error:', err);
@@ -205,7 +214,7 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetUserId,
-          text: `❌ <b>Verification Failed</b>\n\nYour video submission did not meet the validation criteria (unclear face or fingers not visible). Please record again and re-submit.`,
+          text: `❌ <b>Verification Failed</b>\n\nYour video submission did not meet the validation criteria. Please record again and re-submit.`,
           parse_mode: 'HTML'
         })
       });
