@@ -1103,9 +1103,13 @@
     }
 
     function openHumanChallenge() {
-      if (isHumanVerified) return;
-      document.getElementById('humanModal').style.display = 'flex';
-      generateCaptcha();
+  if (isHumanVerified) return;
+  const botUrl = 'https://t.me/XTAPCRYPTOBOT?start=verify';
+  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+    window.Telegram.WebApp.openTelegramLink(botUrl);
+  } else {
+    window.open(botUrl, '_blank');
+  }
     }
     function closeHumanChallenge() {
       document.getElementById('humanModal').style.display = 'none';
