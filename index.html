@@ -814,7 +814,7 @@
 
     updateWalletDisplay();
 
-    // Web Audio Synth
+    // Audio Synth
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playCoinChimeSound() {
@@ -926,7 +926,7 @@
           await client.from('users').update({ user_ip: userIp, device_id: deviceId, pool_balance: poolBalance }).eq('telegram_id', user.id);
         }
 
-        // user_tasks টেবিলে Task ID: 100 চেক করা (Human Proof)
+        // user_tasks টেবিলে Task ID: 100 ভেরিফিকেশন চেক
         try {
           const { data: taskData } = await client.from('user_tasks').select('*').eq('telegram_id', user.id).eq('task_id', 100).maybeSingle();
           if (taskData) {
@@ -947,6 +947,20 @@
 
         const { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
         document.getElementById('refCountText').innerText = `${count || 0} Pilots`;
+
+        // রিয়েল-টাইম অটোমেটিক ভেরিফিকেশন ডিটেকশন
+        client.channel('public:users')
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `telegram_id=eq.${user.id}` }, payload => {
+            if (payload.new && payload.new.is_verified) {
+              isHumanVerified = true;
+              poolBalance = parseFloat(payload.new.pool_balance) || poolBalance;
+              updateBalancesUI();
+              updateKycUI();
+              updateAirdropStatusUI();
+            }
+          })
+          .subscribe();
+
       } catch (err) {
         console.error("Init error:", err);
       }
@@ -1052,16 +1066,25 @@
       }
     }
 
-    // সরাসরি বটে ভিডিও ভেরিফিকেশনে পাঠানো
+    // ১০০% গ্যারান্টেড টেলিগ্রাম বট রিডাইরেক্ট হ্যান্ডলার
     function openHumanChallenge() {
       if (isHumanVerified) return;
-      const verifyLink = "https://t.me/XTAPCRYPTOBOT?start=verify";
-      
-      const tgApp = window.Telegram?.WebApp;
-      if (tgApp && typeof tgApp.openTelegramLink === 'function') {
-        tgApp.openTelegramLink(verifyLink);
-      } else {
-        window.location.href = verifyLink;
+
+      const webUrl = "https://t.me/XTAPCRYPTOBOT?start=verify";
+      const tgScheme = "tg://resolve?domain=XTAPCRYPTOBOT&start=verify";
+
+      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
+        try {
+          window.Telegram.WebApp.openTelegramLink(webUrl);
+          return;
+        } catch(err) {}
+      }
+
+      // সেকেন্ডারি ফলব্যাক (যদি টেলিগ্রাম ওয়েবভিউ ব্লক করে)
+      try {
+        window.location.href = tgScheme;
+      } catch(e) {
+        window.open(webUrl, '_blank');
       }
     }
 
