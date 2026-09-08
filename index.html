@@ -46,7 +46,6 @@
       padding-bottom: 85px;
     }
 
-    /* Top HUD Bar */
     .top-hud {
       display: flex;
       justify-content: space-between;
@@ -109,7 +108,6 @@
       transform: scale(0.96);
     }
 
-    /* Views */
     .view-container {
       display: none;
       flex-direction: column;
@@ -122,7 +120,6 @@
       display: flex;
     }
 
-    /* MINE TAB */
     .hero-balance-wrap {
       text-align: center;
       margin-top: 10px;
@@ -181,7 +178,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* 3D Coin Stage */
     .coin-stage-wrap {
       position: relative;
       width: 260px;
@@ -301,7 +297,6 @@
       50% { transform: scale(1.02); }
     }
 
-    /* Cards */
     .view-header {
       text-align: center;
       margin-bottom: 20px;
@@ -397,10 +392,18 @@
     }
 
     .btn-action-small.active-highlight {
-      background: var(--accent-gradient);
-      color: #050507;
-      border: none;
+      background: var(--accent-gradient) !important;
+      color: #050507 !important;
+      border: none !important;
       box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-action-small.verified-state {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border: none !important;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.3) !important;
+      cursor: default !important;
     }
 
     .btn-action-small:disabled {
@@ -427,7 +430,6 @@
       color: var(--gold);
     }
 
-    /* Modals */
     .cyber-modal-overlay {
       display: none;
       position: fixed;
@@ -498,7 +500,6 @@
       border: none;
     }
 
-    /* Dock Navigation */
     .dock-nav {
       position: fixed;
       bottom: 0;
@@ -559,7 +560,6 @@
 </head>
 <body oncontextmenu="return false;">
 
-  <!-- Top HUD Bar -->
   <div class="top-hud">
     <div class="user-profile-hud">
       <div class="user-avatar-circle" id="userInitial">P</div>
@@ -571,7 +571,6 @@
     </div>
   </div>
 
-  <!-- TAB 1: MINE -->
   <div id="view-mine" class="view-container active">
     <div class="hero-balance-wrap">
       <div class="hud-caption">VAULT ASSETS</div>
@@ -585,7 +584,6 @@
       <div class="cooldown-timer-wrap" id="miningTimer">Cycle: 03:00:00</div>
     </div>
 
-    <!-- 3D Coin Interactive Stage -->
     <div class="coin-stage-wrap">
       <div class="stage-glow-back"></div>
       <div class="rotating-halo"></div>
@@ -601,7 +599,6 @@
     <button class="primary-cta-btn" id="claimBtn" onclick="handleClaimOrStart()">START FARMING</button>
   </div>
 
-  <!-- TAB 2: TASKS -->
   <div id="view-tasks" class="view-container">
     <div class="view-header">
       <h2 class="view-title">Earn XTAP</h2>
@@ -610,7 +607,6 @@
     <div class="glass-card-stack" id="tasksContainer"></div>
   </div>
 
-  <!-- TAB 3: MINERS -->
   <div id="view-miners" class="view-container">
     <div class="view-header">
       <h2 class="view-title">Mining Hub</h2>
@@ -640,7 +636,6 @@
     </div>
   </div>
 
-  <!-- TAB 4: FRIENDS -->
   <div id="view-friends" class="view-container">
     <div class="view-header">
       <h2 class="view-title">Syndicate</h2>
@@ -669,7 +664,6 @@
     </div>
   </div>
 
-  <!-- TAB 5: PROFILE -->
   <div id="view-profile" class="view-container">
     <div class="view-header">
       <h2 class="view-title">Pilot Identity</h2>
@@ -731,7 +725,6 @@
     </div>
   </div>
 
-  <!-- BSC WALLET MODAL -->
   <div class="cyber-modal-overlay" id="bscWalletModal">
     <div class="cyber-modal-window">
       <h3>Bind BSC Settlement</h3>
@@ -744,7 +737,6 @@
     </div>
   </div>
 
-  <!-- Dock Navigation -->
   <div class="dock-nav">
     <div class="dock-tab active" onclick="switchDockNav('mine', this)">
       <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2zM12 5L5 19h14L12 5z"/></svg>
@@ -815,7 +807,6 @@
     updateKycUI();
     updateBalancesUI();
 
-    // Audio Synth
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playCoinChimeSound() {
@@ -880,12 +871,17 @@
           userIp = ipData.ip;
         } catch(e) {}
 
-        // ডাটাবেস থেকে রিড
+        // সরাসরি সুপাবেস থেকে বর্তমান অ্যাকাউন্টের ডেটা আনা
         let { data, error } = await client
           .from('users')
           .select('*')
-          .or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`)
+          .eq('telegram_id', user.id)
           .maybeSingle();
+
+        if (!data) {
+          const fallbackRes = await client.from('users').select('*').eq('telegram_id', String(user.id)).maybeSingle();
+          if (fallbackRes.data) data = fallbackRes.data;
+        }
         
         if (!data && !error) {
           const { data: created } = await client.from('users').insert([{
@@ -908,7 +904,8 @@
         } else if (data) {
           poolBalance = Math.max(parseFloat(data.pool_balance) || 0, poolBalance);
           
-          if (data.is_verified === true || data.is_verified === 'true') {
+          // ভেরিফিকেশন চেক
+          if (data.is_verified === true || data.is_verified === 'true' || data.is_verified == 1) {
             isHumanVerified = true;
             localStorage.setItem(`xtap_verified_${user.id}`, 'true');
           }
@@ -926,22 +923,22 @@
             }
           }
 
-          // স্টেট ওভাররাইট রোধে is_verified টা ডাটাবেসেরটা অক্ষত রাখা
           await client.from('users').update({ 
             user_ip: userIp, 
             device_id: deviceId, 
             pool_balance: poolBalance 
-          }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
+          }).eq('telegram_id', user.id);
         }
 
-        // user_tasks টেবিলেও Task ID 100 চেক
+        // user_tasks টেবিলেও Task 100 চেক
         try {
           const { data: taskData } = await client
             .from('user_tasks')
             .select('*')
-            .or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`)
+            .eq('telegram_id', user.id)
             .eq('task_id', 100)
             .maybeSingle();
+
           if (taskData) {
             isHumanVerified = true;
             localStorage.setItem(`xtap_verified_${user.id}`, 'true');
@@ -962,11 +959,11 @@
         const { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
         document.getElementById('refCountText').innerText = `${count || 0} Pilots`;
 
-        // রিয়েল-টাইম অটো আপডেট
+        // রিয়েল-টাইম ডাটাবেস লিসেনার
         client.channel('public:users')
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, payload => {
-            if (payload.new && (payload.new.telegram_id == user.id)) {
-              if (payload.new.is_verified) {
+            if (payload.new && (String(payload.new.telegram_id) === String(user.id))) {
+              if (payload.new.is_verified === true || payload.new.is_verified === 'true') {
                 isHumanVerified = true;
                 localStorage.setItem(`xtap_verified_${user.id}`, 'true');
               }
@@ -1018,7 +1015,7 @@
       closeBscWalletModal();
 
       try {
-        await client.from('users').update({ wallet_address: addr }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
+        await client.from('users').update({ wallet_address: addr }).eq('telegram_id', user.id);
       } catch (e) {
         console.error("DB Error:", e);
       }
@@ -1034,26 +1031,30 @@
       localStorage.setItem(`xtap_bal_${user.id}`, poolBalance);
     }
 
+    // নির্ভুল KYC UI রেন্ডারার
     function updateKycUI() {
       const btn = document.getElementById('kycActionBtn');
       const desc = document.getElementById('kycStatusDesc');
       const icon = document.getElementById('kycIcon');
+      
+      if (!btn) return;
+
       if (isHumanVerified) {
         btn.innerText = "Verified ✓";
         btn.classList.remove('active-highlight');
-        btn.style.background = "#10b981";
-        btn.style.color = "#000";
+        btn.classList.add('verified-state');
         btn.disabled = true;
-        desc.innerText = "Identity Authenticated";
-        icon.innerText = "✅";
+        btn.style.pointerEvents = "none";
+        if (desc) desc.innerText = "Identity Authenticated";
+        if (icon) icon.innerText = "✅";
       } else {
         btn.innerText = "Verify";
+        btn.classList.remove('verified-state');
         btn.classList.add('active-highlight');
         btn.disabled = false;
-        btn.style.background = "";
-        btn.style.color = "";
-        desc.innerText = "Anti-sybil verification required";
-        icon.innerText = "🛡️";
+        btn.style.pointerEvents = "auto";
+        if (desc) desc.innerText = "Anti-sybil verification required";
+        if (icon) icon.innerText = "🛡️";
       }
       updateAirdropStatusUI();
     }
@@ -1062,6 +1063,8 @@
       const label = document.getElementById('airdropEligibilityLabel');
       const tag = document.getElementById('airdropStatusTag');
       
+      if (!label || !tag) return;
+
       if (bscAddress && isHumanVerified) {
         label.innerText = "Eligible for Mainnet Drop";
         tag.innerText = "Auto Airdrop";
@@ -1189,7 +1192,7 @@
       await client.from('users').update({ 
         pool_balance: poolBalance,
         last_claim_time: new Date(lastClaimTime).toISOString()
-      }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
+      }).eq('telegram_id', user.id);
     }
 
     function switchDockNav(tabName, el) {
@@ -1216,7 +1219,7 @@
       const recordMap = {};
 
       try {
-        const { data: records } = await client.from('user_tasks').select('*').or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
+        const { data: records } = await client.from('user_tasks').select('*').eq('telegram_id', user.id);
         (records || []).forEach(r => {
           recordMap[r.task_id] = new Date(r.last_completed_at || r.completed_at).getTime();
           if (r.task_id !== 99) {
@@ -1371,7 +1374,7 @@
       updateBalancesUI();
 
       try {
-        await client.from('users').update({ pool_balance: poolBalance }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
+        await client.from('users').update({ pool_balance: poolBalance }).eq('telegram_id', user.id);
         await client.from('user_tasks').upsert({ 
           telegram_id: user.id, 
           task_id: id,
