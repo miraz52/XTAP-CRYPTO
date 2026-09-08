@@ -871,7 +871,6 @@
           userIp = ipData.ip;
         } catch(e) {}
 
-        // সরাসরি সুপাবেস থেকে বর্তমান অ্যাকাউন্টের ডেটা আনা
         let { data, error } = await client
           .from('users')
           .select('*')
@@ -902,9 +901,9 @@
           lastClaimTime = Date.now();
           localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
         } else if (data) {
-          poolBalance = Math.max(parseFloat(data.pool_balance) || 0, poolBalance);
+          // সার্ভারের ডাটাবেস ব্যালেন্সকে সর্বোচ্চ গুরুত্ব দেওয়া হচ্ছে
+          poolBalance = parseFloat(data.pool_balance) || 0;
           
-          // ভেরিফিকেশন চেক
           if (data.is_verified === true || data.is_verified === 'true' || data.is_verified == 1) {
             isHumanVerified = true;
             localStorage.setItem(`xtap_verified_${user.id}`, 'true');
@@ -923,14 +922,14 @@
             }
           }
 
+          // সার্ভারের ব্যালেন্স ওভাররাইট রোধ করা হয়েছে
           await client.from('users').update({ 
             user_ip: userIp, 
-            device_id: deviceId, 
-            pool_balance: poolBalance 
+            device_id: deviceId
           }).eq('telegram_id', user.id);
         }
 
-        // user_tasks টেবিলেও Task 100 চেক
+        // user_tasks চেক
         try {
           const { data: taskData } = await client
             .from('user_tasks')
@@ -959,7 +958,7 @@
         const { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
         document.getElementById('refCountText').innerText = `${count || 0} Pilots`;
 
-        // রিয়েল-টাইম ডাটাবেস লিসেনার
+        // রিয়েল-টাইম ডাটাবেস সিঙ্ক
         client.channel('public:users')
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, payload => {
             if (payload.new && (String(payload.new.telegram_id) === String(user.id))) {
@@ -1031,7 +1030,6 @@
       localStorage.setItem(`xtap_bal_${user.id}`, poolBalance);
     }
 
-    // নির্ভুল KYC UI রেন্ডারার
     function updateKycUI() {
       const btn = document.getElementById('kycActionBtn');
       const desc = document.getElementById('kycStatusDesc');
