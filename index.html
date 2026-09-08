@@ -800,7 +800,7 @@
     document.getElementById('refLinkDisplay').innerText = directAppLink;
 
     let poolBalance = parseFloat(localStorage.getItem(`xtap_bal_${user.id}`)) || 0;
-    let isHumanVerified = false;
+    let isHumanVerified = (localStorage.getItem(`xtap_verified_${user.id}`) === 'true');
     let bscAddress = localStorage.getItem(`xtap_wallet_${user.id}`) || "";
     
     const cycleDurationMs = 3 * 60 * 60 * 1000;
@@ -812,6 +812,8 @@
     let lastBoostTime = parseInt(localStorage.getItem(`xtap_last_boost_${user.id}`)) || 0;
 
     updateWalletDisplay();
+    updateKycUI();
+    updateBalancesUI();
 
     // Audio Synth
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -878,7 +880,7 @@
           userIp = ipData.ip;
         } catch(e) {}
 
-        // ডাটাবেস থেকে ইউজার চেক (নম্বর এবং স্ট্রিং দুটোতেই)
+        // ডাটাবেস থেকে রিড
         let { data, error } = await client
           .from('users')
           .select('*')
@@ -905,13 +907,15 @@
           localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
         } else if (data) {
           poolBalance = Math.max(parseFloat(data.pool_balance) || 0, poolBalance);
-          isHumanVerified = (data.is_verified === true || data.is_verified === 'true');
+          
+          if (data.is_verified === true || data.is_verified === 'true') {
+            isHumanVerified = true;
+            localStorage.setItem(`xtap_verified_${user.id}`, 'true');
+          }
           
           if (data.wallet_address) {
             bscAddress = data.wallet_address;
             localStorage.setItem(`xtap_wallet_${user.id}`, bscAddress);
-          } else if (bscAddress) {
-            client.from('users').update({ wallet_address: bscAddress }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
           }
           
           if (data.last_claim_time) {
@@ -921,10 +925,16 @@
               localStorage.setItem(`xtap_last_claim_${user.id}`, lastClaimTime);
             }
           }
-          await client.from('users').update({ user_ip: userIp, device_id: deviceId, pool_balance: poolBalance }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
+
+          // স্টেট ওভাররাইট রোধে is_verified টা ডাটাবেসেরটা অক্ষত রাখা
+          await client.from('users').update({ 
+            user_ip: userIp, 
+            device_id: deviceId, 
+            pool_balance: poolBalance 
+          }).or(`telegram_id.eq.${user.id},telegram_id.eq."${user.id}"`);
         }
 
-        // user_tasks টেবিলে Task ID 100 চেক
+        // user_tasks টেবিলেও Task ID 100 চেক
         try {
           const { data: taskData } = await client
             .from('user_tasks')
@@ -934,6 +944,7 @@
             .maybeSingle();
           if (taskData) {
             isHumanVerified = true;
+            localStorage.setItem(`xtap_verified_${user.id}`, 'true');
           }
         } catch (e) {}
 
@@ -951,11 +962,14 @@
         const { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', user.id);
         document.getElementById('refCountText').innerText = `${count || 0} Pilots`;
 
-        // রিয়েল-টাইম ডাটাবেস পরিবর্তন ডিটেকশন
+        // রিয়েল-টাইম অটো আপডেট
         client.channel('public:users')
           .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, payload => {
             if (payload.new && (payload.new.telegram_id == user.id)) {
-              if (payload.new.is_verified) isHumanVerified = true;
+              if (payload.new.is_verified) {
+                isHumanVerified = true;
+                localStorage.setItem(`xtap_verified_${user.id}`, 'true');
+              }
               poolBalance = parseFloat(payload.new.pool_balance) || poolBalance;
               updateBalancesUI();
               updateKycUI();
