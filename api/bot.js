@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(200).send('XTAP Bot Backend is Online');
@@ -9,18 +11,14 @@ export default async function handler(req, res) {
   const SUPABASE_URL = 'https://grqnxhwzqfrxfnujaicn.supabase.co';
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'sb_publishable_FXFjr-BDyvkWkHAn0ykoiQ_X96I3Pq0';
 
-  const supabaseHeaders = {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-    'Content-Type': 'application/json'
-  };
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // 1. /start Command Handling
   if (message && message.text && message.text.startsWith('/start')) {
     const chatId = message.chat.id;
     const fullText = message.text.trim();
 
-    // Human Proof Verification Request (/start verify)
+    // Human Proof Verification Request
     if (fullText.includes('verify')) {
       const verifyMessage = 
         `🛡️ <b>XTAP PROTOCOL: HUMAN PROOF VERIFICATION</b>\n\n` +
@@ -45,17 +43,13 @@ export default async function handler(req, res) {
       return res.status(200).send('OK');
     }
 
-    // Default /start & Referral
+    // Standard /start Referral
     const textParts = fullText.split(' ');
     const param = textParts.length > 1 ? textParts[1] : null;
 
     if (param && String(param) !== String(chatId)) {
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/referrals`, {
-          method: 'POST',
-          headers: { ...supabaseHeaders, Prefer: 'return=minimal' },
-          body: JSON.stringify({ referrer_id: String(param), referred_id: String(chatId) })
-        });
+        await supabase.from('referrals').insert([{ referrer_id: String(param), referred_id: String(chatId) }]);
       } catch (err) {
         console.error('Referral error:', err);
       }
@@ -93,7 +87,6 @@ export default async function handler(req, res) {
     const userId = message.from.id;
     const userName = message.from.username ? `@${message.from.username}` : (message.from.first_name || 'Pilot');
 
-    // Message to User
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -104,7 +97,6 @@ export default async function handler(req, res) {
       })
     });
 
-    // Forward to Admin
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/forwardMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -115,7 +107,6 @@ export default async function handler(req, res) {
       })
     });
 
-    // Admin Decision Panel
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -137,7 +128,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   }
 
-  // 3. Admin Callback Handling
+  // 3. Admin Decision Handling
   if (callback_query) {
     const adminChatId = callback_query.from.id;
     const data = callback_query.data;
@@ -148,39 +139,42 @@ export default async function handler(req, res) {
     }
 
     if (data.startsWith('approve_')) {
-      const targetUserId = data.replace('approve_', '');
+      const targetUserId = data.replace('approve_', '').trim();
+      const numUserId = Number(targetUserId);
       const nowIso = new Date().toISOString();
 
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/user_tasks`, {
-          method: 'POST',
-          headers: { ...supabaseHeaders, Prefer: 'resolution=merge-duplicates' },
-          body: JSON.stringify({
-            telegram_id: targetUserId,
+        // ১. users টেবিলে চেক করা (String এবং Number উভয় ফিল্টারে)
+        const { data: users } = await supabase
+          .from('users')
+          .select('*')
+          .or(`telegram_id.eq.${numUserId},telegram_id.eq."${targetUserId}"`);
+
+        let currentBal = 0;
+        if (users && users.length > 0) {
+          currentBal = parseFloat(users[0].pool_balance) || 0;
+        }
+
+        const newBal = currentBal + 300;
+
+        // ২. users আপডেট
+        await supabase
+          .from('users')
+          .update({ is_verified: true, pool_balance: newBal })
+          .or(`telegram_id.eq.${numUserId},telegram_id.eq."${targetUserId}"`);
+
+        // ৩. user_tasks টেবিলে Task ID 100 সংরক্ষণ
+        await supabase
+          .from('user_tasks')
+          .upsert({
+            telegram_id: numUserId,
             task_id: 100,
             completed_at: nowIso,
             last_completed_at: nowIso
-          })
-        });
+          }, { onConflict: 'telegram_id,task_id' });
 
-        const userRes = await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}&select=*`, {
-          headers: supabaseHeaders
-        });
-        const users = await userRes.json();
-
-        if (users && users.length > 0) {
-          const currentBal = Number(users[0].pool_balance || 0);
-          await fetch(`${SUPABASE_URL}/rest/v1/users?telegram_id=eq.${targetUserId}`, {
-            method: 'PATCH',
-            headers: { ...supabaseHeaders, Prefer: 'return=minimal' },
-            body: JSON.stringify({ 
-              is_verified: true,
-              pool_balance: currentBal + 300 
-            })
-          });
-        }
       } catch (err) {
-        console.error('Task update error:', err);
+        console.error('Database sync error:', err);
       }
 
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -204,7 +198,7 @@ export default async function handler(req, res) {
         })
       });
     } else if (data.startsWith('reject_')) {
-      const targetUserId = data.replace('reject_', '');
+      const targetUserId = data.replace('reject_', '').trim();
 
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
